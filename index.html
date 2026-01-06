@@ -662,57 +662,61 @@ document.addEventListener('DOMContentLoaded', () => {
     measurementId: "G-R5N8MMM8HZ"
   };
 
+  // Inisialisasi
   const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
   const db = getFirestore(app);
 
-  // Sinkronisasi Awal
+  // 1. Sinkronisasi Saat Aplikasi Dibuka
   async function syncFromCloud() {
     try {
-      const qs = await getDocs(collection(db, "orders"));
-      const data = [];
-      qs.forEach((d) => data.push(d.data()));
-      if (data.length > 0) {
-        data.sort((a, b) => b.inv.localeCompare(a.inv));
-        localStorage.setItem('order_history', JSON.stringify(data));
+      const querySnapshot = await getDocs(collection(db, "orders"));
+      const cloudData = [];
+      querySnapshot.forEach((doc) => cloudData.push(doc.data()));
+      
+      if (cloudData.length > 0) {
+        cloudData.sort((a, b) => b.inv.localeCompare(a.inv));
+        localStorage.setItem('order_history', JSON.stringify(cloudData));
         if (typeof renderHistory === 'function') renderHistory();
-        console.log("✓ Cloud Synced");
+        console.log("✓ Sinkronisasi Cloud Berhasil");
       }
-    } catch (e) { console.error("Sync Error", e); }
+    } catch (e) { console.error("Gagal Sinkron:", e); }
   }
   window.addEventListener('load', syncFromCloud);
 
-  // Simpan/Update ke Cloud
+  // 2. Fungsi Simpan & Edit Otomatis
+  // Mendeteksi klik tombol SIMPAN/HITUNG
   document.addEventListener('click', async (e) => {
     if (e.target.innerText.toUpperCase().includes('SIMPAN')) {
         setTimeout(async () => {
-            const h = JSON.parse(localStorage.getItem('order_history') || '[]');
-            // Cari data yang invoicenya sedang ditampilkan (baik baru atau edit)
-            const curInv = document.getElementById('invDisplay').innerText;
-            const dataToSync = h.find(x => x.inv === curInv);
+            const history = JSON.parse(localStorage.getItem('order_history') || '[]');
+            const currentInv = document.getElementById('invDisplay').innerText;
+            const dataToSync = history.find(x => x.inv === currentInv);
             
             if (dataToSync) {
                 try {
+                    // setDoc akan menimpa data jika Invoice ID sama (Fungsi EDIT)
                     await setDoc(doc(db, "orders", dataToSync.inv), {
                         ...dataToSync,
                         last_sync: new Date().toISOString()
                     });
                     console.log("✓ Cloud Updated: " + dataToSync.inv);
-                } catch (err) { console.error("Cloud Error", err); }
+                } catch (err) { console.error("Cloud Error:", err); }
             }
-        }, 800);
+        }, 1000); // Jeda agar LocalStorage terupdate duluan
     }
   });
 
-  // Hapus dari Cloud
+  // 3. Fungsi Hapus di Cloud
   document.addEventListener('firebaseDelete', async (e) => {
     try {
         await deleteDoc(doc(db, "orders", e.detail));
         console.log("🗑️ Cloud Deleted: " + e.detail);
-    } catch (err) { console.error("Delete Error", err); }
+    } catch (err) { console.error("Gagal Hapus Cloud:", err); }
   });
 </script>
 </body>
 </html>
+
 
 
 
