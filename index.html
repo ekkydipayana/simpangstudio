@@ -808,13 +808,10 @@ document.addEventListener('DOMContentLoaded', () => {
     renderHistory(); 
     generateInvoiceNum();
 });
-</script>
-  <script type="module">
-  // 1. Import library yang dibutuhkan
+<script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-  import { getFirestore, doc, setDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+  import { getFirestore, doc, setDoc, collection, getDocs } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-  // 2. Konfigurasi milik Simpang Studio
   const firebaseConfig = {
     apiKey: "AIzaSyD3pKjssC6NRKXDfhHsr65al9maZto2IgQ",
     authDomain: "simpang-studio.firebaseapp.com",
@@ -825,35 +822,61 @@ document.addEventListener('DOMContentLoaded', () => {
     measurementId: "G-R5N8MMM8HZ"
   };
 
-  // 3. Inisialisasi
   const app = initializeApp(firebaseConfig);
   const db = getFirestore(app);
 
-  // 4. Otomatis kirim ke Cloud saat tombol "SIMPAN" di klik
+  // --- 1. FUNGSI DOWNLOAD (Ambil data dari Cloud ke Perangkat) ---
+  async function downloadFromCloud() {
+    try {
+      const querySnapshot = await getDocs(collection(db, "orders"));
+      const cloudData = [];
+      querySnapshot.forEach((doc) => {
+        cloudData.push(doc.data());
+      });
+
+      if (cloudData.length > 0) {
+        // Urutkan berdasarkan yang terbaru
+        cloudData.sort((a, b) => new Date(b.date) - new Date(a.date));
+        
+        // Simpan ke LocalStorage perangkat baru
+        localStorage.setItem('order_history', JSON.stringify(cloudData));
+        
+        // Refresh tabel jika fungsi renderHistory ada di kode asli Anda
+        if (typeof window.renderHistory === 'function') {
+            window.renderHistory();
+            console.log("✓ Data Cloud berhasil ditarik ke perangkat ini.");
+        }
+      }
+    } catch (e) {
+      console.error("Gagal menarik data:", e);
+    }
+  }
+
+  // Jalankan download saat aplikasi pertama kali dibuka
+  window.onload = function() {
+      downloadFromCloud();
+  };
+
+  // --- 2. FUNGSI UPLOAD (Tetap seperti sebelumnya) ---
   document.addEventListener('click', function (event) {
-    // Mencari tombol simpan tanpa merubah fungsi asli
     if (event.target.innerText.toUpperCase().includes('SIMPAN')) {
-      
-      // Tunggu 1 detik agar fungsi asli Anda selesai simpan ke LocalStorage
       setTimeout(async () => {
         const history = JSON.parse(localStorage.getItem('order_history') || '[]');
         if (history.length > 0) {
-          const dataTerbaru = history[0]; // Ambil pesanan terakhir
+          const dataTerbaru = history[0];
           try {
-            // Simpan ke koleksi 'orders' dengan ID sesuai Nomor Invoice
             await setDoc(doc(db, "orders", dataTerbaru.inv), {
               ...dataTerbaru,
-              waktu_backup: new Date().toISOString()
+              last_sync: new Date().toISOString()
             });
-            console.log("✓ Berhasil Sinkron Cloud: " + dataTerbaru.inv);
-          } catch (e) {
-            console.error("Gagal Sinkron Cloud: ", e);
-          }
+            console.log("✓ Backup Cloud Berhasil.");
+          } catch (e) { console.error(e); }
         }
-      }, 1000);
+      }, 1500);
     }
   });
 </script>
 </body>
 </html>
+
 
