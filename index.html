@@ -4,24 +4,34 @@
 
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-  import { getAnalytics } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-analytics.js";
+  import { getFirestore, doc, setDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-  // Masukkan konfigurasi Firebase Anda di sini
   const firebaseConfig = {
-    apiKey: "API_KEY_ANDA",
-    authDomain: "PROJECT_ID.firebaseapp.com",
-    projectId: "PROJECT_ID",
-    storageBucket: "PROJECT_ID.appspot.com",
-    messagingSenderId: "SENDER_ID",
-    appId: "APP_ID",
-    measurementId: "G-MEASUREMENT_ID"
+    apiKey: "AIzaSyD3pKjssC6NRKXDfhHsr65al9maZto2IgQ",
+    authDomain: "simpang-studio.firebaseapp.com",
+    projectId: "simpang-studio",
+    storageBucket: "simpang-studio.firebasestorage.app",
+    messagingSenderId: "776018160572",
+    appId: "1:776018160572:web:e6d11f9bb1db79173959b9",
+    measurementId: "G-R5N8MMM8HZ"
   };
 
-  // Inisialisasi Firebase
   const app = initializeApp(firebaseConfig);
-  const analytics = getAnalytics(app);
-  
-  console.log("Firebase Simpang Studio Berhasil Terkoneksi!");
+  const db = getFirestore(app);
+
+  // Fungsi cadangan jika sistem interceptor tidak terjangkau
+  setInterval(async () => {
+    const history = JSON.parse(localStorage.getItem('order_history') || '[]');
+    if (history.length > 0) {
+      const lastOrder = history[0]; // Ambil pesanan terbaru
+      try {
+        await setDoc(doc(db, "orders", lastOrder.inv), {
+          ...lastOrder,
+          cloud_sync_date: new Date().toISOString()
+        });
+      } catch (e) { console.error("Firebase Sync Error"); }
+    }
+  }, 10000); // Otomatis cek dan kirim ke cloud setiap 10 detik
 </script>
 
 <meta charset="UTF-8">
@@ -811,3 +821,4 @@ document.addEventListener('DOMContentLoaded', () => {
 </script>
 </body>
 </html>
+
