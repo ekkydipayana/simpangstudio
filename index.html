@@ -399,29 +399,29 @@ body.dark .bg-light { background-color: var(--bg-dark) !important; color: var(--
 <script>
 const rp = n => 'Rp ' + (Math.round(n) || 0).toLocaleString('id-ID');
 let editIndex = -1;
-let isEditMode = false; // Variabel penentu apakah kita mengedit data lama atau input baru
+let isEditMode = false; 
 let lastCalculatedData = {};
 let performanceChart = null;
 
+// Fungsi Inti Data
 function getMaterials(){ return JSON.parse(localStorage.getItem('materials') || '[]'); }
 function setMaterials(d){ localStorage.setItem('materials', JSON.stringify(d)); }
 function getHistory(){ return JSON.parse(localStorage.getItem('order_history') || '[]'); }
 
-function showNotification() {
+function showNotification(msg = 'Data Berhasil Disimpan! ✅') {
     const toast = document.getElementById('studio-toast');
+    toast.innerText = msg;
     toast.style.display = 'block';
     setTimeout(() => { toast.style.display = 'none'; }, 3000);
 }
 
+// Manajemen Material
 function renderInventory(){
   const list = document.getElementById('materialList'); list.innerHTML = '';
   getMaterials().forEach((m, i) => {
     list.innerHTML += `
       <div class="list-group-item d-flex justify-content-between align-items-center py-3 border-0 border-bottom bg-transparent">
-        <div>
-            <span class="fw-bold d-block">${m.name}</span>
-            <span class="text-success small fw-bold">${rp(m.price)} / Kg</span>
-        </div>
+        <div><span class="fw-bold d-block">${m.name}</span><span class="text-success small fw-bold">${rp(m.price)} / Kg</span></div>
         <div>
             <button class="btn-action btn-edit me-1" onclick="editMaterial(${i})">Edit</button>
             <button class="btn-action btn-del" onclick="deleteMaterial(${i})">Hapus</button>
@@ -468,25 +468,12 @@ function generateInvoiceNum(){
   return inv;
 }
 
-// FUNGSI BARU UNTUK MEMASTIKAN PESANAN BARU TIDAK MENIMPA DATA LAMA
+// Kalkulasi & Sinkronisasi
 function calculateAndSave() {
-    // Jika tidak dalam mode edit (isEditMode = false), maka buat nomor invoice baru
-    if (!isEditMode) {
-        generateInvoiceNum();
-    }
-    
-    // Jalankan kalkulasi utama
+    if (!isEditMode) generateInvoiceNum();
     calculate(false);
-    
-    // Beri notifikasi
     showNotification();
-    
-    // Setelah simpan, jika sebelumnya Edit Mode, kembalikan ke New Mode agar tombol Hitung selanjutnya membuat data baru
-    if (isEditMode) {
-        isEditMode = false;
-        // Opsional: generate nomer baru untuk persiapan input selanjutnya
-        generateInvoiceNum();
-    }
+    if (isEditMode) { isEditMode = false; generateInvoiceNum(); }
 }
 
 function calculate(isLoading = false){
@@ -513,20 +500,9 @@ function calculate(isLoading = false){
   document.getElementById('total').innerText = rp(grandTotal);
   document.getElementById('breakdown').innerHTML = `HPP: ${rp(hpp)} | Pajak: ${rp(taxAmount)}`;
 
-  const currentInv = document.getElementById('invDisplay').innerText === '-' ? generateInvoiceNum() : document.getElementById('invDisplay').innerText;
+  const currentInv = document.getElementById('invDisplay').innerText;
 
   lastCalculatedData = {
-      inv: currentInv, 
-      subtotal: subtotal,
-      discAmount: discAmount,
-      taxAmount: taxAmount,
-      total: grandTotal,
-      hpp: hpp,
-      netProfit: netProfit,
-      status: paymentStatus.value
-  };
-
-  saveToHistory({
       inv: currentInv, cust: customer.value, item: itemName.value, total: grandTotal, status: paymentStatus.value,
       hpp: hpp, netProfit: netProfit,
       details: { 
@@ -534,110 +510,41 @@ function calculate(isLoading = false){
           profit: profit.value, risk: risk.value, discount: discPercent, tax: taxPercent,
           matName: materialSelect.options[materialSelect.selectedIndex]?.text 
       }
-  });
+  };
+  
+  saveToHistory(lastCalculatedData);
 
   if(!isLoading && currentInv.includes(localStorage.getItem('inv_counter') || '1')){
       localStorage.setItem('inv_counter', parseInt(localStorage.getItem('inv_counter') || 1) + 1);
   }
 }
 
-function initChart(labels, profitData, hppData) {
-    const ctx = document.getElementById('performanceChart').getContext('2d');
-    if (performanceChart) performanceChart.destroy();
-
-    const isDark = document.body.classList.contains('dark');
-    const textColor = isDark ? '#94a3b8' : '#64748b';
-
-    performanceChart = new Chart(ctx, {
-        type: 'bar',
-        data: {
-            labels: labels,
-            datasets: [
-                {
-                    label: 'Profit Bersih',
-                    data: profitData,
-                    backgroundColor: '#10b981',
-                    borderRadius: 5,
-                },
-                {
-                    label: 'Modal (HPP)',
-                    data: hppData,
-                    backgroundColor: '#3b82f6',
-                    borderRadius: 5,
-                }
-            ]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            scales: {
-                x: { stacked: true, ticks: { color: textColor }, grid: { display: false } },
-                y: { stacked: true, ticks: { color: textColor, callback: value => 'Rp ' + value.toLocaleString() }, grid: { color: isDark ? '#334155' : '#e2e8f0' } }
-            },
-            plugins: {
-                legend: { position: 'top', labels: { color: textColor, font: { weight: 'bold' } } },
-                tooltip: { callbacks: { label: context => context.dataset.label + ': ' + rp(context.raw) } }
-            }
-        }
-    });
-}
-
 function saveToHistory(o){
-    const h = getHistory(); const idx = h.findIndex(x => x.inv === o.inv);
+    const h = getHistory(); 
+    const idx = h.findIndex(x => x.inv === o.inv);
     if(idx > -1) h[idx] = o; else h.unshift(o);
-    localStorage.setItem('order_history', JSON.stringify(h)); renderHistory();
+    localStorage.setItem('order_history', JSON.stringify(h)); 
+    renderHistory();
 }
 
-function renderHistory(){
-    const list = document.getElementById('historyList'); 
-    const searchTerm = document.getElementById('historySearch').value.toLowerCase();
-    list.innerHTML = '';
-    
-    let totalRevenue = 0;
-    let totalProfit = 0;
-    const historyData = getHistory();
-
-    const chartLabels = [];
-    const chartProfit = [];
-    const chartHPP = [];
-
-    historyData.slice(0, 7).reverse().forEach(item => {
-        chartLabels.push(item.inv.split('-').pop()); 
-        chartProfit.push(item.netProfit || 0);
-        chartHPP.push(item.hpp || 0);
-    });
-
-    historyData.forEach((item, i) => {
-        if(item.cust.toLowerCase().includes(searchTerm) || item.item.toLowerCase().includes(searchTerm) || item.inv.toLowerCase().includes(searchTerm)) {
-            totalRevenue += item.total;
-            totalProfit += (item.netProfit || 0);
-            const badgeColor = item.status === 'LUNAS' ? 'bg-success' : 'bg-warning text-dark';
-            list.innerHTML += `
-                <tr style="cursor:pointer" onclick="loadFromHistory(${i})">
-                    <td class="ps-4 py-3"><span class="fw-bold text-success" style="font-size:0.85rem">${item.inv}</span></td>
-                    <td><span class="fw-600">${item.cust || '-'}</span></td>
-                    <td><span class="badge-custom">${item.item || '-'}</span></td>
-                    <td><span class="badge ${badgeColor}" style="font-size:0.65rem; padding: 5px 8px;">${item.status || 'BELUM LUNAS'}</span></td>
-                    <td><span class="fw-800">${rp(item.total)}</span></td>
-                    <td class="text-center pe-4" onclick="event.stopPropagation()">
-                        <button class="btn-action btn-edit me-1" onclick="loadFromHistory(${i})">Buka</button>
-                        <button class="btn-action btn-del" onclick="deleteHistory(${i})">Hapus</button>
-                    </td>
-                </tr>`;
-        }
-    });
-
-    document.getElementById('statRevenue').innerText = rp(totalRevenue);
-    document.getElementById('statProfit').innerText = rp(totalProfit);
-    document.getElementById('statOrders').innerText = historyData.length;
-
-    initChart(chartLabels, chartProfit, chartHPP);
+function deleteHistory(i){ 
+    if(confirm('Hapus pesanan ini secara permanen?')){ 
+        const h = getHistory(); 
+        const deletedInv = h[i].inv;
+        h.splice(i,1); 
+        localStorage.setItem('order_history', JSON.stringify(h)); 
+        renderHistory(); 
+        
+        // Trigger Hapus Cloud
+        document.dispatchEvent(new CustomEvent('firebaseDelete', { detail: deletedInv }));
+        showNotification('Data Terhapus! 🗑️');
+    } 
 }
 
 function loadFromHistory(i){
     const item = getHistory()[i];
     if(!item) return;
-    isEditMode = true; // Masuk ke mode edit
+    isEditMode = true;
     customer.value = item.cust; itemName.value = item.item || ''; 
     document.getElementById('invDisplay').innerText = item.inv;
     weight.value = item.details.weight; time.value = item.details.time;
@@ -647,134 +554,83 @@ function loadFromHistory(i){
     taxActive.value = item.details.tax || 0;
     paymentStatus.value = item.status || 'BELUM LUNAS';
     
-    for(let opt of materialSelect.options) {
-        if(opt.text === item.details.matName) {
-            materialSelect.value = opt.value;
-            break;
-        }
-    }
     document.querySelector('[data-bs-target="#calc"]').click(); 
     calculate(true);
 }
 
-function clearHistory(){ if(confirm('Hapus semua riwayat?')){ localStorage.removeItem('order_history'); renderHistory(); } }
-function deleteHistory(i){ 
-    if(confirm('Hapus pesanan ini secara permanen?')){ 
-        const h = getHistory(); 
-        const deletedInv = h[i].inv; // Simpan ID invoice yang dihapus
-        h.splice(i,1); 
-        localStorage.setItem('order_history', JSON.stringify(h)); 
-        renderHistory(); 
-        
-        // Kirim sinyal ke Firebase bahwa ada data yang dihapus
-        const event = new CustomEvent('firebaseDelete', { detail: deletedInv });
-        document.dispatchEvent(event);
-    } 
-}
-function resetInvCounter(){ if(confirm('Reset nomor invoice ke 0001?')){ localStorage.setItem('inv_counter', 1); generateInvoiceNum(); } }
+// Chart & Utils
+function initChart(labels, profitData, hppData) {
+    const ctx = document.getElementById('performanceChart').getContext('2d');
+    if (performanceChart) performanceChart.destroy();
+    const isDark = document.body.classList.contains('dark');
+    const textColor = isDark ? '#94a3b8' : '#64748b';
 
-function exportPDF(){
-  const { jsPDF } = window.jspdf;
-  const doc = new jsPDF('p', 'mm', 'a4');
-  const primaryColor = [16, 185, 129]; 
-  const darkSlate = [30, 41, 59];
-  const lightGray = [241, 245, 249];
-  const data = lastCalculatedData;
-
-  if(!data.inv) return alert("Silahkan Hitung & Simpan data terlebih dahulu!");
-
-  doc.setFillColor(primaryColor[0], primaryColor[1], primaryColor[2]);
-  doc.rect(0, 0, 210, 45, 'F');
-  doc.setTextColor(255, 255, 255);
-  doc.setFont("helvetica", "bold");
-  doc.setFontSize(26);
-  doc.text("SIMPANG", 15, 22);
-  doc.setFont("helvetica", "normal");
-  doc.text("STUDIO.", 63, 22);
-  doc.setFontSize(9);
-  doc.text("Professional 3D Model & Printing Solution", 15, 29);
-  doc.setFontSize(14);
-  doc.text("INVOICE", 160, 20);
-  doc.setFontSize(10);
-  doc.text(data.inv, 160, 26);
-
-  doc.setTextColor(darkSlate[0], darkSlate[1], darkSlate[2]);
-  doc.setFontSize(8); doc.setFont("helvetica", "bold");
-  doc.text("DITAGIHKAN KEPADA:", 15, 60);
-  doc.setFont("helvetica", "normal"); doc.setFontSize(11);
-  doc.text(customer.value || "Pelanggan Umum", 15, 67);
-
-  doc.setFontSize(8); doc.setFont("helvetica", "bold");
-  doc.text("TANGGAL TERBIT:", 160, 60);
-  doc.setFont("helvetica", "normal"); doc.setFontSize(10);
-  doc.text(new Date().toLocaleDateString('id-ID'), 160, 67);
-
-  doc.setFillColor(lightGray[0], lightGray[1], lightGray[2]);
-  doc.rect(15, 78, 180, 10, 'F');
-  doc.setFont("helvetica", "bold"); doc.setFontSize(9);
-  doc.text("DESKRIPSI PESANAN", 20, 84.5);
-  doc.text("TOTAL", 160, 84.5);
-
-  doc.setFontSize(10);
-  doc.text(itemName.value || "Custom 3D Printing Object", 20, 98);
-  doc.setFont("helvetica", "normal"); doc.setFontSize(8); doc.setTextColor(100);
-  const mat = materialSelect.options[materialSelect.selectedIndex]?.text || "-";
-  doc.text(`Material: ${mat}`, 20, 104);
-  doc.text(`Spesifikasi: ${(+weight.value)+(+support.value)+(+waste.value)}g | ${time.value} jam pengerjaan`, 20, 109);
-  doc.setTextColor(darkSlate[0], darkSlate[1], darkSlate[2]);
-  doc.text(rp(data.subtotal), 160, 98);
-
-  let yPos = 125;
-  doc.setDrawColor(230); doc.line(15, yPos, 195, yPos);
-  yPos += 8; doc.setFontSize(9);
-  doc.text("Subtotal:", 130, yPos);
-  doc.text(rp(data.subtotal), 190, yPos, {align: 'right'});
-
-  if(data.discAmount > 0) {
-      yPos += 6; doc.setTextColor(220, 38, 38);
-      doc.text(`Diskon (${discount.value}%):`, 130, yPos);
-      doc.text(`-${rp(data.discAmount)}`, 190, yPos, {align: 'right'});
-  }
-
-  if(data.taxAmount > 0) {
-      yPos += 6; doc.setTextColor(primaryColor[0], primaryColor[1], primaryColor[2]);
-      doc.text(`PPN (${taxActive.value}%):`, 130, yPos);
-      doc.text(rp(data.taxAmount), 190, yPos, {align: 'right'});
-  }
-
-  yPos += 8;
-  doc.setFillColor(primaryColor[0], primaryColor[1], primaryColor[2]);
-  doc.rect(125, yPos - 5, 70, 12, 'F');
-  doc.setTextColor(255); doc.setFont("helvetica", "bold"); doc.setFontSize(11);
-  doc.text("TOTAL AKHIR:", 130, yPos + 2.5);
-  doc.text(rp(data.total), 190, yPos + 2.5, {align: 'right'});
-
-  yPos = 210;
-  doc.setTextColor(darkSlate[0], darkSlate[1], darkSlate[2]); doc.setFontSize(9);
-  doc.text("SYARAT & KETENTUAN:", 15, yPos);
-  doc.setDrawColor(primaryColor[0], primaryColor[1], primaryColor[2]); doc.line(15, yPos + 2, 50, yPos + 2);
-
-  doc.setFont("helvetica", "normal"); doc.setFontSize(8); doc.setTextColor(100);
-  const terms = ["1. Barang sudah dicetak sesuai file tidak dapat dibatalkan.", "2. Estimasi waktu tergantung antrian.", "3. Simpang Studio tidak bertanggung jawab atas kesalahan desain dari customer.", "4. Terima kasih telah mempercayakan proyek 3D anda kepada Simpang Studio"];
-  terms.forEach((t, i) => doc.text(t, 15, yPos + 8 + (i * 4)));
-
-  doc.saveGraphicsState();
-  doc.setGState(new doc.GState({opacity: 0.1}));
-  doc.setFontSize(70);
-  doc.setTextColor(data.status === 'LUNAS' ? 16 : 220, data.status === 'LUNAS' ? 185 : 38, data.status === 'LUNAS' ? 129 : 38);
-  doc.text(data.status === 'LUNAS' ? "PAID" : "UNPAID", 120, 140, {align:'center', angle:45});
-  doc.restoreGraphicsState();
-
-  doc.save(`${data.inv}_${customer.value || 'Client'}.pdf`);
+    performanceChart = new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: labels,
+            datasets: [
+                { label: 'Profit Bersih', data: profitData, backgroundColor: '#10b981', borderRadius: 5 },
+                { label: 'Modal (HPP)', data: hppData, backgroundColor: '#3b82f6', borderRadius: 5 }
+            ]
+        },
+        options: {
+            responsive: true, maintainAspectRatio: false,
+            scales: {
+                x: { stacked: true, ticks: { color: textColor }, grid: { display: false } },
+                y: { stacked: true, ticks: { color: textColor, callback: v => 'Rp ' + v.toLocaleString() }, grid: { color: isDark ? '#334155' : '#e2e8f0' } }
+            },
+            plugins: { legend: { labels: { color: textColor } } }
+        }
+    });
 }
 
-    function toggleDark(){ 
+function renderHistory(){
+    const list = document.getElementById('historyList'); 
+    const searchTerm = document.getElementById('historySearch').value.toLowerCase();
+    list.innerHTML = '';
+    let totalRev = 0, totalProf = 0;
+    const historyData = getHistory();
+    const cL = [], cP = [], cH = [];
+
+    historyData.slice(0, 7).reverse().forEach(item => {
+        cL.push(item.inv.split('-').pop()); cP.push(item.netProfit || 0); cH.push(item.hpp || 0);
+    });
+
+    historyData.forEach((item, i) => {
+        if(item.cust.toLowerCase().includes(searchTerm) || item.item.toLowerCase().includes(searchTerm) || item.inv.toLowerCase().includes(searchTerm)) {
+            totalRev += item.total; totalProf += (item.netProfit || 0);
+            const badge = item.status === 'LUNAS' ? 'bg-success' : 'bg-warning text-dark';
+            list.innerHTML += `
+                <tr style="cursor:pointer" onclick="loadFromHistory(${i})">
+                    <td class="ps-4 py-3"><span class="fw-bold text-success">${item.inv}</span></td>
+                    <td><span class="fw-600">${item.cust || '-'}</span></td>
+                    <td><span class="badge-custom">${item.item || '-'}</span></td>
+                    <td><span class="badge ${badge}">${item.status || 'BELUM LUNAS'}</span></td>
+                    <td><span class="fw-800">${rp(item.total)}</span></td>
+                    <td class="text-center" onclick="event.stopPropagation()">
+                        <button class="btn-action btn-edit" onclick="loadFromHistory(${i})">Buka</button>
+                        <button class="btn-action btn-del" onclick="deleteHistory(${i})">Hapus</button>
+                    </td>
+                </tr>`;
+        }
+    });
+    document.getElementById('statRevenue').innerText = rp(totalRev);
+    document.getElementById('statProfit').innerText = rp(totalProf);
+    document.getElementById('statOrders').innerText = historyData.length;
+    initChart(cL, cP, cH);
+}
+
+function clearHistory(){ if(confirm('Hapus semua?')){ localStorage.removeItem('order_history'); renderHistory(); } }
+function resetInvCounter(){ if(confirm('Reset invoice?')){ localStorage.setItem('inv_counter', 1); generateInvoiceNum(); } }
+
+function toggleDark(){ 
     document.body.classList.toggle('dark');
-    const btn = document.getElementById('themeBtn');
-    btn.innerText = document.body.classList.contains('dark') ? '☀️ Mode Terang' : '🌙 Mode Gelap';
+    document.getElementById('themeBtn').innerText = document.body.classList.contains('dark') ? '☀️ Mode Terang' : '🌙 Mode Gelap';
     renderHistory(); 
 }
 
+// Inisialisasi DOM
 document.addEventListener('DOMContentLoaded', () => {
     const s = JSON.parse(localStorage.getItem('setup_3d') || '{"depr":2100,"operator":2000,"watt":100,"kwh":1500,"maint":750}');
     ['depr','operator','watt','kwh','maint'].forEach(id => {
@@ -782,27 +638,16 @@ document.addEventListener('DOMContentLoaded', () => {
         if(el) {
             el.value = s[id];
             el.addEventListener('input', () => {
-                const currentData = {};
-                ['depr','operator','watt','kwh','maint'].forEach(k => currentData[k] = +document.getElementById(k).value);
-                localStorage.setItem('setup_3d', JSON.stringify(currentData));
+                const cur = {};
+                ['depr','operator','watt','kwh','maint'].forEach(k => cur[k] = +document.getElementById(k).value);
+                localStorage.setItem('setup_3d', JSON.stringify(cur));
             });
         }
     });
-
-    const inputs = ['customer', 'itemName', 'weight', 'time', 'support', 'waste', 'profit', 'risk', 'discount'];
-    inputs.forEach(id => {
-        const el = document.getElementById(id);
-        if(el) {
-            if(sessionStorage.getItem('form_'+id)) el.value = sessionStorage.getItem('form_'+id);
-            el.addEventListener('input', () => sessionStorage.setItem('form_'+id, el.value));
-        }
-    });
-
-    renderInventory(); 
-    renderHistory(); 
-    generateInvoiceNum();
+    renderInventory(); renderHistory(); generateInvoiceNum();
 });
-</script> 
+</script>
+
 <script type="module">
   import { initializeApp, getApps, getApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
   import { getFirestore, doc, setDoc, collection, getDocs, deleteDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
@@ -820,52 +665,55 @@ document.addEventListener('DOMContentLoaded', () => {
   const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
   const db = getFirestore(app);
 
-  // 1. Fungsi Tarik Data (Tetap)
+  // Sinkronisasi Awal
   async function syncFromCloud() {
     try {
-      const querySnapshot = await getDocs(collection(db, "orders"));
-      const cloudData = [];
-      querySnapshot.forEach((doc) => cloudData.push(doc.data()));
-      if (cloudData.length > 0) {
-        cloudData.sort((a, b) => b.inv.localeCompare(a.inv));
-        localStorage.setItem('order_history', JSON.stringify(cloudData));
+      const qs = await getDocs(collection(db, "orders"));
+      const data = [];
+      qs.forEach((d) => data.push(d.data()));
+      if (data.length > 0) {
+        data.sort((a, b) => b.inv.localeCompare(a.inv));
+        localStorage.setItem('order_history', JSON.stringify(data));
         if (typeof renderHistory === 'function') renderHistory();
+        console.log("✓ Cloud Synced");
       }
-    } catch (e) { console.error("Sync Error:", e); }
+    } catch (e) { console.error("Sync Error", e); }
   }
   window.addEventListener('load', syncFromCloud);
 
-  // 2. Logika Simpan/Edit (Menangkap klik tombol)
-  document.addEventListener('click', function (event) {
-    if (event.target.innerText.toUpperCase().includes('SIMPAN') || event.target.innerText.toUpperCase().includes('HITUNG')) {
-      setTimeout(async () => {
-        const history = JSON.parse(localStorage.getItem('order_history') || '[]');
-        if (history.length > 0) {
-          // Firebase setDoc akan otomatis mengupdate jika ID (Invoice) sudah ada
-          const dataTerbaru = history[0]; 
-          try {
-            await setDoc(doc(db, "orders", dataTerbaru.inv), {
-              ...dataTerbaru,
-              last_sync: new Date().toISOString()
-            });
-            console.log("✓ Cloud Updated: " + dataTerbaru.inv);
-          } catch (e) { console.error("Update Error:", e); }
-        }
-      }, 1000);
+  // Simpan/Update ke Cloud
+  document.addEventListener('click', async (e) => {
+    if (e.target.innerText.toUpperCase().includes('SIMPAN')) {
+        setTimeout(async () => {
+            const h = JSON.parse(localStorage.getItem('order_history') || '[]');
+            // Cari data yang invoicenya sedang ditampilkan (baik baru atau edit)
+            const curInv = document.getElementById('invDisplay').innerText;
+            const dataToSync = h.find(x => x.inv === curInv);
+            
+            if (dataToSync) {
+                try {
+                    await setDoc(doc(db, "orders", dataToSync.inv), {
+                        ...dataToSync,
+                        last_sync: new Date().toISOString()
+                    });
+                    console.log("✓ Cloud Updated: " + dataToSync.inv);
+                } catch (err) { console.error("Cloud Error", err); }
+            }
+        }, 800);
     }
   });
 
-  // 3. Logika Hapus dari Cloud
+  // Hapus dari Cloud
   document.addEventListener('firebaseDelete', async (e) => {
-    const invID = e.detail;
     try {
-      await deleteDoc(doc(db, "orders", invID));
-      console.log("🗑️ Terhapus dari Cloud: " + invID);
-    } catch (e) { console.error("Gagal hapus di Cloud:", e); }
+        await deleteDoc(doc(db, "orders", e.detail));
+        console.log("🗑️ Cloud Deleted: " + e.detail);
+    } catch (err) { console.error("Delete Error", err); }
   });
 </script>
 </body>
 </html>
+
 
 
 
