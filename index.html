@@ -658,7 +658,19 @@ function loadFromHistory(i){
 }
 
 function clearHistory(){ if(confirm('Hapus semua riwayat?')){ localStorage.removeItem('order_history'); renderHistory(); } }
-function deleteHistory(i){ if(confirm('Hapus pesanan ini?')){ const h = getHistory(); h.splice(i,1); localStorage.setItem('order_history', JSON.stringify(h)); renderHistory(); } }
+function deleteHistory(i){ 
+    if(confirm('Hapus pesanan ini secara permanen?')){ 
+        const h = getHistory(); 
+        const deletedInv = h[i].inv; // Simpan ID invoice yang dihapus
+        h.splice(i,1); 
+        localStorage.setItem('order_history', JSON.stringify(h)); 
+        renderHistory(); 
+        
+        // Kirim sinyal ke Firebase bahwa ada data yang dihapus
+        const event = new CustomEvent('firebaseDelete', { detail: deletedInv });
+        document.dispatchEvent(event);
+    } 
+}
 function resetInvCounter(){ if(confirm('Reset nomor invoice ke 0001?')){ localStorage.setItem('inv_counter', 1); generateInvoiceNum(); } }
 
 function exportPDF(){
@@ -790,9 +802,10 @@ document.addEventListener('DOMContentLoaded', () => {
     renderHistory(); 
     generateInvoiceNum();
 });
-</script> <script type="module">
+</script> 
+<script type="module">
   import { initializeApp, getApps, getApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-  import { getFirestore, doc, setDoc, collection, getDocs } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+  import { getFirestore, doc, setDoc, collection, getDocs, deleteDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
   const firebaseConfig = {
     apiKey: "AIzaSyD3pKjssC6NRKXDfhHsr65al9maZto2IgQ",
@@ -807,51 +820,53 @@ document.addEventListener('DOMContentLoaded', () => {
   const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
   const db = getFirestore(app);
 
+  // 1. Fungsi Tarik Data (Tetap)
   async function syncFromCloud() {
     try {
-      console.log("Menghubungkan ke Cloud Simpang Studio...");
       const querySnapshot = await getDocs(collection(db, "orders"));
       const cloudData = [];
       querySnapshot.forEach((doc) => cloudData.push(doc.data()));
-
       if (cloudData.length > 0) {
         cloudData.sort((a, b) => b.inv.localeCompare(a.inv));
         localStorage.setItem('order_history', JSON.stringify(cloudData));
-        
-        if (typeof renderHistory === 'function') {
-          renderHistory();
-        }
-        console.log("✓ Berhasil sinkronisasi dengan Cloud.");
+        if (typeof renderHistory === 'function') renderHistory();
       }
-    } catch (e) {
-      console.error("Gagal sinkronisasi Cloud:", e);
-    }
+    } catch (e) { console.error("Sync Error:", e); }
   }
-
   window.addEventListener('load', syncFromCloud);
 
+  // 2. Logika Simpan/Edit (Menangkap klik tombol)
   document.addEventListener('click', function (event) {
-    if (event.target.innerText.toUpperCase().includes('SIMPAN')) {
+    if (event.target.innerText.toUpperCase().includes('SIMPAN') || event.target.innerText.toUpperCase().includes('HITUNG')) {
       setTimeout(async () => {
         const history = JSON.parse(localStorage.getItem('order_history') || '[]');
         if (history.length > 0) {
+          // Firebase setDoc akan otomatis mengupdate jika ID (Invoice) sudah ada
           const dataTerbaru = history[0]; 
           try {
             await setDoc(doc(db, "orders", dataTerbaru.inv), {
               ...dataTerbaru,
               last_sync: new Date().toISOString()
             });
-            console.log("✓ Cloud Backup Berhasil: " + dataTerbaru.inv);
-          } catch (e) {
-            console.error("Gagal Backup ke Cloud:", e);
-          }
+            console.log("✓ Cloud Updated: " + dataTerbaru.inv);
+          } catch (e) { console.error("Update Error:", e); }
         }
-      }, 1500);
+      }, 1000);
     }
+  });
+
+  // 3. Logika Hapus dari Cloud
+  document.addEventListener('firebaseDelete', async (e) => {
+    const invID = e.detail;
+    try {
+      await deleteDoc(doc(db, "orders", invID));
+      console.log("🗑️ Terhapus dari Cloud: " + invID);
+    } catch (e) { console.error("Gagal hapus di Cloud:", e); }
   });
 </script>
 </body>
 </html>
+
 
 
 
