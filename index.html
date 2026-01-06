@@ -2,28 +2,6 @@
 <html lang="id">
 <head>
 
-<script type="module">
-  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-  import { getAnalytics } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-analytics.js";
-
-  // Masukkan konfigurasi Firebase Anda di sini
-  const firebaseConfig = {
-    apiKey: "API_KEY_ANDA",
-    authDomain: "PROJECT_ID.firebaseapp.com",
-    projectId: "PROJECT_ID",
-    storageBucket: "PROJECT_ID.appspot.com",
-    messagingSenderId: "SENDER_ID",
-    appId: "APP_ID",
-    measurementId: "G-MEASUREMENT_ID"
-  };
-
-  // Inisialisasi Firebase
-  const app = initializeApp(firebaseConfig);
-  const analytics = getAnalytics(app);
-  
-  console.log("Firebase Simpang Studio Berhasil Terkoneksi!");
-</script>
-
 <meta charset="UTF-8">
 <title>Simpang Studio | Professional 3D Suite</title>
 <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -808,8 +786,9 @@ document.addEventListener('DOMContentLoaded', () => {
     renderHistory(); 
     generateInvoiceNum();
 });
+  
 <script type="module">
-  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+  import { initializeApp, getApps, getApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
   import { getFirestore, doc, setDoc, collection, getDocs } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
   const firebaseConfig = {
@@ -822,55 +801,56 @@ document.addEventListener('DOMContentLoaded', () => {
     measurementId: "G-R5N8MMM8HZ"
   };
 
-  const app = initializeApp(firebaseConfig);
+  // Inisialisasi tanpa duplikasi
+  const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
   const db = getFirestore(app);
 
-  // --- 1. FUNGSI DOWNLOAD (Ambil data dari Cloud ke Perangkat) ---
-  async function downloadFromCloud() {
+  // Fungsi Tarik Data dari Cloud ke Perangkat
+  async function syncFromCloud() {
     try {
+      console.log("Menghubungkan ke Cloud Simpang Studio...");
       const querySnapshot = await getDocs(collection(db, "orders"));
       const cloudData = [];
-      querySnapshot.forEach((doc) => {
-        cloudData.push(doc.data());
-      });
+      querySnapshot.forEach((doc) => cloudData.push(doc.data()));
 
       if (cloudData.length > 0) {
-        // Urutkan berdasarkan yang terbaru
-        cloudData.sort((a, b) => new Date(b.date) - new Date(a.date));
-        
-        // Simpan ke LocalStorage perangkat baru
+        // Urutkan data berdasarkan nomor invoice terbaru
+        cloudData.sort((a, b) => b.inv.localeCompare(a.inv));
         localStorage.setItem('order_history', JSON.stringify(cloudData));
         
-        // Refresh tabel jika fungsi renderHistory ada di kode asli Anda
+        // Update tampilan tabel jika fungsi tersedia
         if (typeof window.renderHistory === 'function') {
-            window.renderHistory();
-            console.log("✓ Data Cloud berhasil ditarik ke perangkat ini.");
+          window.renderHistory();
+        } else if (typeof renderHistory === 'function') {
+          renderHistory();
         }
+        console.log("✓ Berhasil sinkronisasi dengan Cloud.");
       }
     } catch (e) {
-      console.error("Gagal menarik data:", e);
+      console.error("Gagal sinkronisasi Cloud:", e);
     }
   }
 
-  // Jalankan download saat aplikasi pertama kali dibuka
-  window.onload = function() {
-      downloadFromCloud();
-  };
+  // Jalankan tarik data saat aplikasi dibuka
+  window.addEventListener('load', syncFromCloud);
 
-  // --- 2. FUNGSI UPLOAD (Tetap seperti sebelumnya) ---
+  // Fungsi Kirim ke Cloud saat klik SIMPAN
   document.addEventListener('click', function (event) {
     if (event.target.innerText.toUpperCase().includes('SIMPAN')) {
+      // Jeda 1.5 detik agar fungsi lokal Anda selesai menyimpan dulu
       setTimeout(async () => {
         const history = JSON.parse(localStorage.getItem('order_history') || '[]');
         if (history.length > 0) {
-          const dataTerbaru = history[0];
+          const dataTerbaru = history[0]; // Ambil data terakhir yang baru disimpan
           try {
             await setDoc(doc(db, "orders", dataTerbaru.inv), {
               ...dataTerbaru,
               last_sync: new Date().toISOString()
             });
-            console.log("✓ Backup Cloud Berhasil.");
-          } catch (e) { console.error(e); }
+            console.log("✓ Cloud Backup Berhasil: " + dataTerbaru.inv);
+          } catch (e) {
+            console.error("Gagal Backup ke Cloud:", e);
+          }
         }
       }, 1500);
     }
@@ -878,5 +858,6 @@ document.addEventListener('DOMContentLoaded', () => {
 </script>
 </body>
 </html>
+
 
 
