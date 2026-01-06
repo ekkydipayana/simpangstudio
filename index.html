@@ -1,6 +1,29 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
+
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+  import { getAnalytics } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-analytics.js";
+
+  // Masukkan konfigurasi Firebase Anda di sini
+  const firebaseConfig = {
+    apiKey: "API_KEY_ANDA",
+    authDomain: "PROJECT_ID.firebaseapp.com",
+    projectId: "PROJECT_ID",
+    storageBucket: "PROJECT_ID.appspot.com",
+    messagingSenderId: "SENDER_ID",
+    appId: "APP_ID",
+    measurementId: "G-MEASUREMENT_ID"
+  };
+
+  // Inisialisasi Firebase
+  const app = initializeApp(firebaseConfig);
+  const analytics = getAnalytics(app);
+  
+  console.log("Firebase Simpang Studio Berhasil Terkoneksi!");
+</script>
+
 <meta charset="UTF-8">
 <title>Simpang Studio | Professional 3D Suite</title>
 <meta name="viewport" content="width=device-width, initial-scale=1">
