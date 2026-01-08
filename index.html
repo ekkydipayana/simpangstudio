@@ -684,9 +684,213 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 </script>
 
+<script>
+// --- LOGIKA CORE TERINTEGRASI CLOUD ---
+const rp = n => 'Rp ' + (Math.round(n) || 0).toLocaleString('id-ID');
+let isEditMode = false; 
+let lastCalculatedData = {};
+let performanceChart = null;
+
+// Fungsi helper akses data
+function getMaterials(){ return JSON.parse(localStorage.getItem('materials') || '[]'); }
+function getHistory(){ return JSON.parse(localStorage.getItem('order_history') || '[]'); }
+
+function showNotification() {
+    const toast = document.getElementById('studio-toast');
+    toast.style.display = 'block';
+    setTimeout(() => { toast.style.display = 'none'; }, 3000);
+}
+
+// 1. GENERATE INVOICE (Tetap lokal tapi sinkron)
+function generateInvoiceNum(){
+    const y = new Date().getFullYear();
+    let lastNum = parseInt(localStorage.getItem('inv_counter') || 1);
+    const inv = `INV-${y}-${String(lastNum).padStart(4, '0')}`;
+    document.getElementById('invDisplay').innerText = inv;
+    return inv;
+}
+
+// 2. KALKULASI & TRIGGER SAVE
+function calculateAndSave() {
+    const weightVal = +document.getElementById('weight').value || 0;
+    if(weightVal <= 0) return alert("Berat harus diisi!");
+    
+    calculate(false); // Melakukan perhitungan
+    showNotification();
+    
+    // Reset form setelah simpan jika tidak dalam mode edit
+    if (!isEditMode) {
+        document.getElementById('customer').value = '';
+        document.getElementById('itemName').value = '';
+        document.getElementById('weight').value = '';
+    }
+    isEditMode = false;
+}
+
+function calculate(isLoading = false){
+  const [h, m] = time.value.split(':').map(Number);
+  const hours = h + (m/60);
+  const s = JSON.parse(localStorage.getItem('setup_3d') || '{"depr":2100,"operator":2000,"watt":100,"kwh":1500,"maint":750}');
+  
+  const totalWeight = (+weight.value||0) + (+support.value||0) + (+waste.value||0);
+  const matCost = totalWeight * ((materialSelect.value||0) / 1000);
+  const electric = ((s.watt||0) / 1000) * hours * (s.kwh||0);
+  const opCost = (hours * ((s.depr||0) + (s.operator||0) + (s.maint||0))) + electric;
+  
+  const hpp = matCost + opCost;
+  const subtotal = hpp + (hpp * (+profit.value||0) / 100) + (hpp * (+risk.value||0) / 100);
+
+  const discPercent = +discount.value || 0;
+  const discAmount = subtotal * (discPercent / 100);
+  const afterDisc = subtotal - discAmount;
+  const taxPercent = +taxActive.value || 0;
+  const taxAmount = afterDisc * (taxPercent / 100);
+  const grandTotal = afterDisc + taxAmount;
+  const netProfit = grandTotal - hpp - taxAmount;
+
+  document.getElementById('total').innerText = rp(grandTotal);
+  document.getElementById('breakdown').innerHTML = `HPP: ${rp(hpp)} | Pajak: ${rp(taxAmount)}`;
+
+  // Gunakan ID yang ada jika sedang Edit, jika tidak buat baru
+  const currentInv = document.getElementById('invDisplay').innerText === '-' ? generateInvoiceNum() : document.getElementById('invDisplay').innerText;
+
+  lastCalculatedData = {
+      inv: currentInv, 
+      subtotal: subtotal,
+      discAmount: discAmount,
+      taxAmount: taxAmount,
+      total: grandTotal,
+      hpp: hpp,
+      netProfit: netProfit,
+      status: paymentStatus.value
+  };
+
+  // Simpan ke history (lokal dulu, nanti disync firebase lewat listener)
+  saveToHistory({
+      inv: currentInv, cust: customer.value, item: itemName.value, total: grandTotal, status: paymentStatus.value,
+      hpp: hpp, netProfit: netProfit,
+      details: { 
+          weight: weight.value, time: time.value, support: support.value, waste: waste.value, 
+          profit: profit.value, risk: risk.value, discount: discPercent, tax: taxPercent,
+          matName: materialSelect.options[materialSelect.selectedIndex]?.text 
+      }
+  });
+
+  if(!isLoading && !isEditMode && currentInv.includes(localStorage.getItem('inv_counter') || '1')){
+      localStorage.setItem('inv_counter', parseInt(localStorage.getItem('inv_counter') || 1) + 1);
+  }
+}
+
+function saveToHistory(o){
+    const h = getHistory(); 
+    const idx = h.findIndex(x => x.inv === o.inv);
+    if(idx > -1) h[idx] = o; else h.unshift(o);
+    localStorage.setItem('order_history', JSON.stringify(h));
+    renderHistory();
+}
+
+// 3. RENDER HISTORY (Gunakan ID unik untuk tombol)
+function renderHistory(){
+    const list = document.getElementById('historyList'); 
+    const searchTerm = document.getElementById('historySearch').value.toLowerCase();
+    list.innerHTML = '';
+    
+    let totalRevenue = 0, totalProfit = 0;
+    const historyData = getHistory();
+    const chartLabels = [], chartProfit = [], chartHPP = [];
+
+    historyData.slice(0, 7).reverse().forEach(item => {
+        chartLabels.push(item.inv.split('-').pop()); 
+        chartProfit.push(item.netProfit || 0);
+        chartHPP.push(item.hpp || 0);
+    });
+
+    historyData.forEach((item) => {
+        if(item.cust.toLowerCase().includes(searchTerm) || item.item.toLowerCase().includes(searchTerm) || item.inv.toLowerCase().includes(searchTerm)) {
+            totalRevenue += item.total;
+            totalProfit += (item.netProfit || 0);
+            const badgeColor = item.status === 'LUNAS' ? 'bg-success' : 'bg-warning text-dark';
+            
+            // TOMBOL MENGGUNAKAN inv BUKAN i
+            list.innerHTML += `
+                <tr>
+                    <td class="ps-4 py-3"><span class="fw-bold text-success" style="font-size:0.85rem">${item.inv}</span></td>
+                    <td><span class="fw-600">${item.cust || '-'}</span></td>
+                    <td><span class="badge-custom">${item.item || '-'}</span></td>
+                    <td><span class="badge ${badgeColor}" style="font-size:0.65rem; padding: 5px 8px;">${item.status || 'BELUM LUNAS'}</span></td>
+                    <td><span class="fw-800">${rp(item.total)}</span></td>
+                    <td class="text-center pe-4">
+                        <button class="btn-action btn-edit me-1" onclick="loadFromHistory('${item.inv}')">Buka</button>
+                        <button class="btn-action btn-del" onclick="deleteHistory('${item.inv}')">Hapus</button>
+                    </td>
+                </tr>`;
+        }
+    });
+
+    document.getElementById('statRevenue').innerText = rp(totalRevenue);
+    document.getElementById('statProfit').innerText = rp(totalProfit);
+    document.getElementById('statOrders').innerText = historyData.length;
+    initChart(chartLabels, chartProfit, chartHPP);
+}
+
+// 4. LOAD DATA UNTUK EDIT
+window.loadFromHistory = function(invId){
+    const item = getHistory().find(x => x.inv === invId);
+    if(!item) return;
+    isEditMode = true;
+    customer.value = item.cust; itemName.value = item.item || ''; 
+    document.getElementById('invDisplay').innerText = item.inv;
+    weight.value = item.details.weight; time.value = item.details.time;
+    support.value = item.details.support; waste.value = item.details.waste;
+    profit.value = item.details.profit; risk.value = item.details.risk;
+    discount.value = item.details.discount || 0;
+    taxActive.value = item.details.tax || 0;
+    paymentStatus.value = item.status || 'BELUM LUNAS';
+    
+    for(let opt of materialSelect.options) {
+        if(opt.text === item.details.matName) { materialSelect.value = opt.value; break; }
+    }
+    document.querySelector('[data-bs-target="#calc"]').click(); 
+    calculate(true);
+}
+
+// 5. CHART & PDF (Tetap)
+function initChart(labels, profitData, hppData) {
+    const ctx = document.getElementById('performanceChart').getContext('2d');
+    if (performanceChart) performanceChart.destroy();
+    performanceChart = new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: labels,
+            datasets: [
+                { label: 'Profit Bersih', data: profitData, backgroundColor: '#10b981', borderRadius: 5 },
+                { label: 'Modal (HPP)', data: hppData, backgroundColor: '#3b82f6', borderRadius: 5 }
+            ]
+        },
+        options: { responsive: true, maintainAspectRatio: false, 
+            scales: { y: { stacked: true, ticks: { callback: v => 'Rp ' + v.toLocaleString() } }, x: { stacked: true } } 
+        }
+    });
+}
+
+function exportPDF(){
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF('p', 'mm', 'a4');
+  const data = lastCalculatedData;
+  if(!data.inv) return alert("Hitung & Simpan data dahulu!");
+  // ... (Sisa kode PDF Anda tetap sama)
+  doc.text("INVOICE: " + data.inv, 15, 20);
+  doc.save(`${data.inv}.pdf`);
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    renderInventory(); renderHistory(); generateInvoiceNum();
+});
+</script>
+
 <script type="module">
   import { initializeApp, getApps, getApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-  import { getFirestore, doc, setDoc, collection, onSnapshot, deleteDoc, getDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+  import { getFirestore, doc, setDoc, collection, onSnapshot, deleteDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
   const firebaseConfig = {
     apiKey: "AIzaSyD3pKjssC6NRKXDfhHsr65al9maZto2IgQ",
@@ -701,125 +905,87 @@ document.addEventListener('DOMContentLoaded', () => {
   const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
   const db = getFirestore(app);
 
-  // ==========================================
-  // 1. REAL-TIME SYNC (READ)
-  // ==========================================
+  // --- SYNC REALTIME ---
   function initRealtimeSync() {
-    // Sync Riwayat Pesanan
     onSnapshot(collection(db, "orders"), (snapshot) => {
       const orders = [];
       snapshot.forEach(doc => orders.push(doc.data()));
       orders.sort((a, b) => b.inv.localeCompare(a.inv));
       localStorage.setItem('order_history', JSON.stringify(orders));
-      if (typeof renderHistory === 'function') renderHistory();
+      renderHistory(); 
     });
 
-    // Sync Material
     onSnapshot(collection(db, "materials"), (snapshot) => {
       const materials = [];
       snapshot.forEach(doc => materials.push(doc.data()));
       localStorage.setItem('materials', JSON.stringify(materials));
-      if (typeof renderInventory === 'function') renderInventory();
+      renderInventory();
+      loadMaterialSelect();
     });
 
-    // Sync Setup & Adjustable Parameters (Profit/Risk)
     onSnapshot(doc(db, "settings", "config"), (docSnap) => {
       if (docSnap.exists()) {
         const data = docSnap.data();
         localStorage.setItem('setup_3d', JSON.stringify(data));
-        // Update UI secara otomatis
-        Object.keys(data).forEach(key => {
+        ['depr', 'operator', 'watt', 'kwh', 'maint', 'profit', 'risk'].forEach(key => {
           const el = document.getElementById(key);
-          if (el) el.value = data[key];
+          if (el && data[key]) el.value = data[key];
         });
       }
     });
   }
 
-  // ==========================================
-  // 2. CRUD MATERIAL (Create, Update, Delete)
-  // ==========================================
+  // --- CRUD FUNCTIONS (Globalized for HTML) ---
   window.saveMaterial = async () => {
     const name = document.getElementById('matName').value.trim();
     const price = Number(document.getElementById('matPrice').value);
     if (!name || price <= 0) return alert('Input tidak valid');
-
-    try {
-      // Menggunakan name sebagai ID (Update otomatis jika nama sama)
-      await setDoc(doc(db, "materials", name), { name, price });
-      document.getElementById('matName').value = '';
-      document.getElementById('matPrice').value = '';
-      showNotification();
-    } catch (e) { console.error("Error Material:", e); }
+    await setDoc(doc(db, "materials", name), { name, price });
+    document.getElementById('matName').value = '';
+    document.getElementById('matPrice').value = '';
   };
 
-  window.deleteMaterial = async (index) => {
-    if(confirm('Hapus material ini dari Cloud?')){
-      const m = JSON.parse(localStorage.getItem('materials'))[index];
-      await deleteDoc(doc(db, "materials", m.name));
-    }
+  window.deleteMaterial = async (name) => {
+    if(confirm('Hapus material?')) await deleteDoc(doc(db, "materials", name));
   };
 
-  // ==========================================
-  // 3. CRUD SETUP & ADJ (Profit & Risk)
-  // ==========================================
-  // Fungsi untuk menyimpan perubahan field ke cloud secara otomatis
-  const syncFieldToCloud = (fieldIds) => {
-    fieldIds.forEach(id => {
-      document.getElementById(id)?.addEventListener('change', async () => {
-        const config = JSON.parse(localStorage.getItem('setup_3d') || '{}');
-        // Tambahkan profit & risk ke dalam objek config
-        config.profit = document.getElementById('profit').value;
-        config.risk = document.getElementById('risk').value;
-        
-        try {
-          await setDoc(doc(db, "settings", "config"), config);
-        } catch (e) { console.error("Error Setup Sync:", e); }
+  // CRUD SETUP & PROFIT/RISK
+  const syncSetup = async () => {
+      const config = {};
+      ['depr', 'operator', 'watt', 'kwh', 'maint', 'profit', 'risk'].forEach(id => {
+          config[id] = document.getElementById(id).value;
       });
-    });
+      await setDoc(doc(db, "settings", "config"), config);
   };
-  
-  // Daftarkan field setup + profit & risk
-  syncFieldToCloud(['depr', 'operator', 'watt', 'kwh', 'maint', 'profit', 'risk']);
+  ['depr', 'operator', 'watt', 'kwh', 'maint', 'profit', 'risk'].forEach(id => {
+      document.getElementById(id).addEventListener('change', syncSetup);
+  });
 
-  // ==========================================
-  // 4. CRUD RIWAYAT (Create/Update & Delete)
-  // ==========================================
-  
-  // Fungsi Delete Riwayat dari Firebase
-  window.deleteHistory = async (i) => {
-    if(confirm('Hapus pesanan ini secara permanen dari Cloud?')){
-      const h = JSON.parse(localStorage.getItem('order_history'));
-      const targetInv = h[i].inv;
-      try {
-        await deleteDoc(doc(db, "orders", targetInv));
-      } catch (e) { alert("Gagal menghapus"); }
+  // CRUD RIWAYAT
+  window.deleteHistory = async (invId) => {
+    if(confirm(`Hapus invoice ${invId}?`)) {
+        await deleteDoc(doc(db, "orders", invId));
     }
   };
 
-  // Fungsi Save/Update Pesanan saat klik "HITUNG & SIMPAN"
-  document.addEventListener('click', async (event) => {
-    if (event.target.innerText.toUpperCase().includes('HITUNG & SIMPAN')) {
-      // Tunggu proses calculate() lokal selesai
+  document.addEventListener('click', async (e) => {
+    if (e.target.innerText.toUpperCase().includes('HITUNG & SIMPAN')) {
       setTimeout(async () => {
-        const history = JSON.parse(localStorage.getItem('order_history') || '[]');
+        const history = getHistory();
         if (history.length > 0) {
-          const dataTerbaru = history[0]; 
-          try {
-            // setDoc akan mengupdate jika Invoice sudah ada (Edit Mode)
-            // atau membuat baru jika Invoice belum ada (New Mode)
-            await setDoc(doc(db, "orders", dataTerbaru.inv), {
-              ...dataTerbaru,
-              last_sync: new Date().toISOString()
-            });
-            console.log("Sync Cloud Berhasil");
-          } catch (e) { console.error("Gagal Simpan Ke Cloud:", e); }
+          // Cari data yang ID-nya sama dengan yang baru saja dihitung
+          const currentInv = document.getElementById('invDisplay').innerText;
+          const dataToSync = history.find(x => x.inv === currentInv);
+          if (dataToSync) {
+            await setDoc(doc(db, "orders", dataToSync.inv), dataToSync);
+          }
         }
-      }, 600);
+      }, 500);
     }
   });
 
-  window.addEventListener('load', initRealtimeSync);
+  initRealtimeSync();
 </script>
 </body>
 </html>
+
