@@ -163,7 +163,7 @@ body {
             <h2 class="fw-800 m-0" style="letter-spacing: -1px;">Simpang<span style="color:var(--primary)">Studio.</span></h2>
             <p class="text-muted small m-0">Professional 3D Printing Business Manager</p>
         </div>
-        </div>
+    </div>
 
     <ul class="nav nav-pills mb-4 justify-content-center" id="mainTabs">
         <li class="nav-item"><button class="nav-link active" data-bs-toggle="tab" data-bs-target="#calc">⚡ Kalkulator</button></li>
@@ -314,8 +314,7 @@ body {
             <div class="card"><div class="card-body p-0">
                 <div class="p-4 d-flex justify-content-between align-items-center border-bottom">
                     <h5 class="fw-800 m-0">Riwayat Pesanan</h5>
-                    <button class="btn btn-sm btn-outline-danger px-3 rounded-pill fw-bold" onclick="clearHistory()" style="font-size: 0.7rem;">HAPUS SEMUA</button>
-                </div>
+                    </div>
                 <div class="table-responsive">
                     <table class="table table-hover align-middle mb-0">
                         <thead>
@@ -358,350 +357,190 @@ body {
                 </div>
                 <div class="mt-4 pt-3 border-top d-flex justify-content-between align-items-center">
                     <button class="btn btn-outline-warning btn-sm fw-bold" onclick="resetInvCounter()">Reset Penomoran Invoice</button>
-                    <span class="text-muted small">Simpang Studio Engine v3.7 Pro + Analytics</span>
+                    <span class="text-muted small">Simpang Studio Engine v4.0 Cloud Sync</span>
                 </div>
             </div></div>
         </div>
     </div>
 </div>
 
-<script>
-// --- LOGIKA CORE ---
-let editIndex = -1;
-let isEditMode = false; 
-let lastCalculatedData = {};
-let performanceChart = null;
+<script type="module">
+// --- FIREBASE SETUP ---
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+import { getFirestore, doc, setDoc, collection, onSnapshot, deleteDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-function getMaterials(){ return JSON.parse(localStorage.getItem('materials') || '[]'); }
-function setMaterials(d){ localStorage.setItem('materials', JSON.stringify(d)); }
-function getHistory(){ return JSON.parse(localStorage.getItem('order_history') || '[]'); }
-
-function showNotification() {
-    const toast = document.getElementById('studio-toast');
-    toast.style.display = 'block';
-    setTimeout(() => { toast.style.display = 'none'; }, 3000);
-}
-
-function renderInventory(){
-  const list = document.getElementById('materialList'); list.innerHTML = '';
-  getMaterials().forEach((m, i) => {
-    list.innerHTML += `
-      <div class="list-group-item d-flex justify-content-between align-items-center py-3 border-0 border-bottom bg-transparent">
-        <div>
-            <span class="fw-bold d-block">${m.name}</span>
-            <span class="text-success small fw-bold">${rp(m.price)} / Kg</span>
-        </div>
-        <div>
-            <button class="btn-action btn-edit me-1" onclick="editMaterial(${i})">Edit</button>
-            <button class="btn-action btn-del" onclick="deleteMaterial(${i})">Hapus</button>
-        </div>
-      </div>`;
-  });
-  loadMaterialSelect();
-}
-
-// Global scope agar bisa dioverride Firebase
-window.saveMaterial = function() {
-  const name = matName.value.trim(), price = Number(matPrice.value);
-  if(!name || price <= 0) return alert('Data tidak valid!');
-  const d = getMaterials();
-  if(editIndex === -1) d.push({name, price}); else { d[editIndex] = {name, price}; editIndex = -1; btnSaveMat.innerText = 'Tambah'; }
-  setMaterials(d); renderInventory(); matName.value = ''; matPrice.value = '';
+const firebaseConfig = {
+    apiKey: "AIzaSyD3pKjssC6NRKXDfhHsr65al9maZto2IgQ",
+    authDomain: "simpang-studio.firebaseapp.com",
+    projectId: "simpang-studio",
+    storageBucket: "simpang-studio.firebasestorage.app",
+    messagingSenderId: "776018160572",
+    appId: "1:776018160572:web:e6d11f9bb1db79173959b9",
+    measurementId: "G-R5N8MMM8HZ"
 };
 
-function editMaterial(i){
-    const item = getMaterials()[i]; matName.value = item.name; matPrice.value = item.price; 
-    editIndex = i; btnSaveMat.innerText = 'Update'; matName.focus();
-}
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
 
-window.deleteMaterial = function(i){ if(confirm('Hapus material?')){ const d = getMaterials(); d.splice(i,1); setMaterials(d); renderInventory(); } };
-
-function loadMaterialSelect(){
-  materialSelect.innerHTML = '';
-  const mats = getMaterials();
-  if(mats.length === 0) {
-      materialSelect.innerHTML = `<option value="0">-- Tambah Material di Tab Stok --</option>`;
-  } else {
-      mats.forEach(m => { materialSelect.innerHTML += `<option value="${m.price}">${m.name}</option>`; });
-  }
-  updatePriceGram();
-}
-
-function updatePriceGram(){ if(materialSelect.value) priceGram.value = rp(materialSelect.value / 1000); }
-materialSelect.addEventListener('change', updatePriceGram);
-
-function generateInvoiceNum(){
-  const y = new Date().getFullYear();
-  let lastNum = parseInt(localStorage.getItem('inv_counter') || 1);
-  const inv = `INV-${y}-${String(lastNum).padStart(4, '0')}`;
-  document.getElementById('invDisplay').innerText = inv;
-  return inv;
-}
-
-function calculateAndSave() {
-    if (!isEditMode) generateInvoiceNum();
-    calculate(false);
-    showNotification();
-    if (isEditMode) {
-        isEditMode = false;
-        generateInvoiceNum();
-    }
-}
-
-function calculate(isLoading = false){
-  const [h, m] = time.value.split(':').map(Number);
-  const hours = h + (m/60);
-  const s = JSON.parse(localStorage.getItem('setup_3d') || '{"depr":2100,"operator":2000,"watt":100,"kwh":1500,"maint":750}');
-  
-  const totalWeight = (+weight.value||0) + (+support.value||0) + (+waste.value||0);
-  const matCost = totalWeight * ((materialSelect.value||0) / 1000);
-  const electric = ((s.watt||0) / 1000) * hours * (s.kwh||0);
-  const opCost = (hours * ((s.depr||0) + (s.operator||0) + (s.maint||0))) + electric;
-  
-  const hpp = matCost + opCost;
-  const subtotal = hpp + (hpp * (+profit.value||0) / 100) + (hpp * (+risk.value||0) / 100);
-
-  const discPercent = +discount.value || 0;
-  const discAmount = subtotal * (discPercent / 100);
-  const afterDisc = subtotal - discAmount;
-  const taxPercent = +taxActive.value || 0;
-  const taxAmount = afterDisc * (taxPercent / 100);
-  const grandTotal = afterDisc + taxAmount;
-  const netProfit = grandTotal - hpp - taxAmount;
-
-  document.getElementById('total').innerText = rp(grandTotal);
-  document.getElementById('breakdown').innerHTML = `HPP: ${rp(hpp)} | Pajak: ${rp(taxAmount)}`;
-
-  const currentInv = document.getElementById('invDisplay').innerText === '-' ? generateInvoiceNum() : document.getElementById('invDisplay').innerText;
-
-  lastCalculatedData = {
-      inv: currentInv, 
-      subtotal: subtotal,
-      discAmount: discAmount,
-      taxAmount: taxAmount,
-      total: grandTotal,
-      hpp: hpp,
-      netProfit: netProfit,
-      status: paymentStatus.value
-  };
-
-  saveToHistory({
-      inv: currentInv, cust: customer.value, item: itemName.value, total: grandTotal, status: paymentStatus.value,
-      hpp: hpp, netProfit: netProfit,
-      details: { 
-          weight: weight.value, time: time.value, support: support.value, waste: waste.value, 
-          profit: profit.value, risk: risk.value, discount: discPercent, tax: taxPercent,
-          matName: materialSelect.options[materialSelect.selectedIndex]?.text 
-      }
-  });
-
-  if(!isLoading && currentInv.includes(localStorage.getItem('inv_counter') || '1')){
-      localStorage.setItem('inv_counter', parseInt(localStorage.getItem('inv_counter') || 1) + 1);
-  }
-}
-
-function initChart(labels, profitData, hppData) {
-    const ctx = document.getElementById('performanceChart').getContext('2d');
-    if (performanceChart) performanceChart.destroy();
-
-    // Selalu gunakan warna mode terang
-    const textColor = '#64748b';
-
-    performanceChart = new Chart(ctx, {
-        type: 'bar',
-        data: {
-            labels: labels,
-            datasets: [
-                { label: 'Profit Bersih', data: profitData, backgroundColor: '#10b981', borderRadius: 5 },
-                { label: 'Modal (HPP)', data: hppData, backgroundColor: '#3b82f6', borderRadius: 5 }
-            ]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            scales: {
-                x: { stacked: true, ticks: { color: textColor }, grid: { display: false } },
-                y: { stacked: true, ticks: { color: textColor, callback: v => 'Rp ' + v.toLocaleString() }, grid: { color: '#e2e8f0' } }
-            },
-            plugins: {
-                legend: { position: 'top', labels: { color: textColor, font: { weight: 'bold' } } },
-                tooltip: { callbacks: { label: ctx => ctx.dataset.label + ': ' + rp(ctx.raw) } }
-            }
-        }
-    });
-}
-
-function saveToHistory(o){
-    const h = getHistory(); const idx = h.findIndex(x => x.inv === o.inv);
-    if(idx > -1) h[idx] = o; else h.unshift(o);
-    localStorage.setItem('order_history', JSON.stringify(h)); renderHistory();
-}
-
-function renderHistory(){
-    const list = document.getElementById('historyList'); 
-    const searchTerm = document.getElementById('historySearch').value.toLowerCase();
-    list.innerHTML = '';
-    
-    let totalRevenue = 0, totalProfit = 0;
-    const historyData = getHistory();
-    const chartLabels = [], chartProfit = [], chartHPP = [];
-
-    historyData.slice(0, 7).reverse().forEach(item => {
-        chartLabels.push(item.inv.split('-').pop()); 
-        chartProfit.push(item.netProfit || 0);
-        chartHPP.push(item.hpp || 0);
-    });
-
-    historyData.forEach((item, i) => {
-        if(item.cust.toLowerCase().includes(searchTerm) || item.item.toLowerCase().includes(searchTerm) || item.inv.toLowerCase().includes(searchTerm)) {
-            totalRevenue += item.total;
-            totalProfit += (item.netProfit || 0);
-            const badgeColor = item.status === 'LUNAS' ? 'bg-success' : 'bg-warning text-dark';
-            list.innerHTML += `
-                <tr style="cursor:pointer" onclick="loadFromHistory(${i})">
-                    <td class="ps-4 py-3"><span class="fw-bold text-success" style="font-size:0.85rem">${item.inv}</span></td>
-                    <td><span class="fw-600">${item.cust || '-'}</span></td>
-                    <td><span class="badge-custom">${item.item || '-'}</span></td>
-                    <td><span class="badge ${badgeColor}" style="font-size:0.65rem; padding: 5px 8px;">${item.status || 'BELUM LUNAS'}</span></td>
-                    <td><span class="fw-800">${rp(item.total)}</span></td>
-                    <td class="text-center pe-4" onclick="event.stopPropagation()">
-                        <button class="btn-action btn-edit me-1" onclick="loadFromHistory(${i})">Buka</button>
-                        <button class="btn-action btn-del" onclick="deleteHistory(${i})">Hapus</button>
-                    </td>
-                </tr>`;
-        }
-    });
-
-    document.getElementById('statRevenue').innerText = rp(totalRevenue);
-    document.getElementById('statProfit').innerText = rp(totalProfit);
-    document.getElementById('statOrders').innerText = historyData.length;
-    initChart(chartLabels, chartProfit, chartHPP);
-}
-
-function loadFromHistory(i){
-    const item = getHistory()[i];
-    if(!item) return;
-    isEditMode = true;
-    customer.value = item.cust; itemName.value = item.item || ''; 
-    document.getElementById('invDisplay').innerText = item.inv;
-    weight.value = item.details.weight; time.value = item.details.time;
-    support.value = item.details.support; waste.value = item.details.waste;
-    profit.value = item.details.profit; risk.value = item.details.risk;
-    discount.value = item.details.discount || 0;
-    taxActive.value = item.details.tax || 0;
-    paymentStatus.value = item.status || 'BELUM LUNAS';
-    
-    for(let opt of materialSelect.options) {
-        if(opt.text === item.details.matName) { materialSelect.value = opt.value; break; }
-    }
-    document.querySelector('[data-bs-target="#calc"]').click(); 
-    calculate(true);
-}
-
-function clearHistory(){ if(confirm('Hapus semua riwayat?')){ localStorage.removeItem('order_history'); renderHistory(); } }
-function deleteHistory(i){ if(confirm('Hapus pesanan ini?')){ const h = getHistory(); h.splice(i,1); localStorage.setItem('order_history', JSON.stringify(h)); renderHistory(); } }
-function resetInvCounter(){ if(confirm('Reset nomor invoice ke 0001?')){ localStorage.setItem('inv_counter', 1); generateInvoiceNum(); } }
-
-function exportPDF(){
-  const { jsPDF } = window.jspdf;
-  const doc = new jsPDF('p', 'mm', 'a4');
-  const primaryColor = [16, 185, 129], darkSlate = [30, 41, 59], lightGray = [241, 245, 249];
-  const data = lastCalculatedData;
-
-  if(!data.inv) return alert("Silahkan Hitung & Simpan data terlebih dahulu!");
-
-  doc.setFillColor(...primaryColor); doc.rect(0, 0, 210, 45, 'F');
-  doc.setTextColor(255); doc.setFont("helvetica", "bold"); doc.setFontSize(26);
-  doc.text("SIMPANG", 15, 22); doc.setFont("helvetica", "normal"); doc.text("STUDIO.", 63, 22);
-  doc.setFontSize(9); doc.text("Professional 3D Model & Printing Solution", 15, 29);
-  doc.setFontSize(14); doc.text("INVOICE", 160, 20); doc.setFontSize(10); doc.text(data.inv, 160, 26);
-
-  doc.setTextColor(...darkSlate); doc.setFontSize(8); doc.setFont("helvetica", "bold"); doc.text("DITAGIHKAN KEPADA:", 15, 60);
-  doc.setFont("helvetica", "normal"); doc.setFontSize(11); doc.text(customer.value || "Pelanggan Umum", 15, 67);
-  doc.setFontSize(8); doc.setFont("helvetica", "bold"); doc.text("TANGGAL TERBIT:", 160, 60);
-  doc.setFont("helvetica", "normal"); doc.setFontSize(10); doc.text(new Date().toLocaleDateString('id-ID'), 160, 67);
-
-  doc.setFillColor(...lightGray); doc.rect(15, 78, 180, 10, 'F');
-  doc.setFont("helvetica", "bold"); doc.setFontSize(9); doc.text("DESKRIPSI PESANAN", 20, 84.5); doc.text("TOTAL", 160, 84.5);
-
-  doc.setFontSize(10); doc.text(itemName.value || "Custom 3D Printing Object", 20, 98);
-  doc.setFont("helvetica", "normal"); doc.setFontSize(8); doc.setTextColor(100);
-  const mat = materialSelect.options[materialSelect.selectedIndex]?.text || "-";
-  doc.text(`Material: ${mat}`, 20, 104);
-  doc.text(`Spesifikasi: ${(+weight.value)+(+support.value)+(+waste.value)}g | ${time.value} jam pengerjaan`, 20, 109);
-  doc.setTextColor(...darkSlate); doc.text(rp(data.subtotal), 160, 98);
-
-  let yPos = 125; doc.setDrawColor(230); doc.line(15, yPos, 195, yPos);
-  yPos += 8; doc.setFontSize(9); doc.text("Subtotal:", 130, yPos); doc.text(rp(data.subtotal), 190, yPos, {align: 'right'});
-
-  if(data.discAmount > 0) {
-      yPos += 6; doc.setTextColor(220, 38, 38); doc.text(`Diskon (${discount.value}%):`, 130, yPos); doc.text(`-${rp(data.discAmount)}`, 190, yPos, {align: 'right'});
-  }
-  if(data.taxAmount > 0) {
-      yPos += 6; doc.setTextColor(...primaryColor); doc.text(`PPN (${taxActive.value}%):`, 130, yPos); doc.text(rp(data.taxAmount), 190, yPos, {align: 'right'});
-  }
-
-  yPos += 8; doc.setFillColor(...primaryColor); doc.rect(125, yPos - 5, 70, 12, 'F');
-  doc.setTextColor(255); doc.setFont("helvetica", "bold"); doc.setFontSize(11);
-  doc.text("TOTAL AKHIR:", 130, yPos + 2.5); doc.text(rp(data.total), 190, yPos + 2.5, {align: 'right'});
-
-  yPos = 210; doc.setTextColor(...darkSlate); doc.setFontSize(9); doc.text("SYARAT & KETENTUAN:", 15, yPos);
-  doc.setDrawColor(...primaryColor); doc.line(15, yPos + 2, 50, yPos + 2);
-  doc.setFont("helvetica", "normal"); doc.setFontSize(8); doc.setTextColor(100);
-  ["1. Barang sudah dicetak sesuai file tidak dapat dibatalkan.", "2. Estimasi waktu tergantung antrian.", "3. Simpang Studio tidak bertanggung jawab atas kesalahan desain.", "4. Terima kasih telah mempercayakan proyek anda."].forEach((t, i) => doc.text(t, 15, yPos + 8 + (i * 4)));
-
-  doc.saveGraphicsState(); doc.setGState(new doc.GState({opacity: 0.1})); doc.setFontSize(70);
-  doc.setTextColor(data.status === 'LUNAS' ? 16 : 220, data.status === 'LUNAS' ? 185 : 38, data.status === 'LUNAS' ? 129 : 38);
-  doc.text(data.status === 'LUNAS' ? "PAID" : "UNPAID", 120, 140, {align:'center', angle:45}); doc.restoreGraphicsState();
-
-  doc.save(`${data.inv}_${customer.value || 'Client'}.pdf`);
-}
-
-document.addEventListener('DOMContentLoaded', () => {
-    const s = JSON.parse(localStorage.getItem('setup_3d') || '{"depr":2100,"operator":2000,"watt":100,"kwh":1500,"maint":750}');
-    ['depr','operator','watt','kwh','maint'].forEach(id => {
-        const el = document.getElementById(id);
-        if(el) {
-            el.value = s[id];
-            el.addEventListener('input', () => {
-                const currentData = {};
-                ['depr','operator','watt','kwh','maint'].forEach(k => currentData[k] = +document.getElementById(k).value);
-                localStorage.setItem('setup_3d', JSON.stringify(currentData));
-            });
-        }
-    });
-
-    ['customer', 'itemName', 'weight', 'time', 'support', 'waste', 'profit', 'risk', 'discount'].forEach(id => {
-        const el = document.getElementById(id);
-        if(el) {
-            if(sessionStorage.getItem('form_'+id)) el.value = sessionStorage.getItem('form_'+id);
-            el.addEventListener('input', () => sessionStorage.setItem('form_'+id, el.value));
-        }
-    });
-
-    renderInventory(); renderHistory(); generateInvoiceNum();
-});
-</script>
-
-<script>
-// --- LOGIKA CORE TERINTEGRASI CLOUD ---
-const rp = n => 'Rp ' + (Math.round(n) || 0).toLocaleString('id-ID');
-let isEditMode = false; 
+// --- GLOBAL STATE ---
+let materialsData = [];
+let historyData = [];
+let editIndex = -1; // For materials only
+let isEditMode = false;
+let currentEditingInv = ""; // Keeps track of ID being edited
 let lastCalculatedData = {};
 let performanceChart = null;
 
-// Fungsi helper akses data
-function getMaterials(){ return JSON.parse(localStorage.getItem('materials') || '[]'); }
-function getHistory(){ return JSON.parse(localStorage.getItem('order_history') || '[]'); }
+// --- UTILITY ---
+const rp = n => 'Rp ' + (Math.round(n) || 0).toLocaleString('id-ID');
 
-function showNotification() {
+window.showNotification = function() {
     const toast = document.getElementById('studio-toast');
     toast.style.display = 'block';
     setTimeout(() => { toast.style.display = 'none'; }, 3000);
 }
 
-// 1. GENERATE INVOICE (Tetap lokal tapi sinkron)
-function generateInvoiceNum(){
+// --- REALTIME LISTENERS (CRUD: READ) ---
+
+// 1. Sync Materials
+onSnapshot(collection(db, "materials"), (snapshot) => {
+    materialsData = [];
+    snapshot.forEach(doc => {
+        // We use doc.id as the name, and data contains name & price
+        materialsData.push(doc.data());
+    });
+    // Simpan ke localstorage sebagai cache agar performa cepat
+    localStorage.setItem('materials', JSON.stringify(materialsData));
+    renderInventory();
+});
+
+// 2. Sync Orders (History)
+onSnapshot(collection(db, "orders"), (snapshot) => {
+    historyData = [];
+    snapshot.forEach(doc => historyData.push(doc.data()));
+    // Sort desc by Invoice ID
+    historyData.sort((a, b) => b.inv.localeCompare(a.inv));
+    
+    // Find highest invoice number for next generation
+    let maxNum = 0;
+    historyData.forEach(o => {
+        const parts = o.inv.split('-');
+        if(parts.length === 3) {
+            const num = parseInt(parts[2]);
+            if(num > maxNum) maxNum = num;
+        }
+    });
+    localStorage.setItem('inv_counter', maxNum + 1);
+
+    localStorage.setItem('order_history', JSON.stringify(historyData));
+    renderHistory();
+    
+    // Jika sedang tidak mode edit, update display invoice number
+    if(!isEditMode) {
+        generateInvoiceNum(); 
+    }
+});
+
+// 3. Sync Settings
+onSnapshot(doc(db, "settings", "config"), (docSnap) => {
+    if (docSnap.exists()) {
+        const data = docSnap.data();
+        localStorage.setItem('setup_3d', JSON.stringify(data));
+        ['depr', 'operator', 'watt', 'kwh', 'maint'].forEach(key => {
+            const el = document.getElementById(key);
+            if (el && data[key]) el.value = data[key];
+        });
+    }
+});
+
+// --- INVENTORY FUNCTIONS (CRUD: CREATE, UPDATE, DELETE) ---
+
+window.renderInventory = function(){
+    const list = document.getElementById('materialList'); 
+    list.innerHTML = '';
+    materialsData.forEach((m) => {
+        // Kita gunakan m.name sebagai ID unik
+        list.innerHTML += `
+        <div class="list-group-item d-flex justify-content-between align-items-center py-3 border-0 border-bottom bg-transparent">
+            <div>
+                <span class="fw-bold d-block">${m.name}</span>
+                <span class="text-success small fw-bold">${rp(m.price)} / Kg</span>
+            </div>
+            <div>
+                <button class="btn-action btn-edit me-1" onclick="editMaterial('${m.name}')">Edit</button>
+                <button class="btn-action btn-del" onclick="deleteMaterial('${m.name}')">Hapus</button>
+            </div>
+        </div>`;
+    });
+    loadMaterialSelect();
+}
+
+window.loadMaterialSelect = function(){
+    const materialSelect = document.getElementById('materialSelect');
+    materialSelect.innerHTML = '';
+    if(materialsData.length === 0) {
+        materialSelect.innerHTML = `<option value="0">-- Tambah Material di Tab Stok --</option>`;
+    } else {
+        materialsData.forEach(m => { materialSelect.innerHTML += `<option value="${m.price}">${m.name}</option>`; });
+    }
+    updatePriceGram();
+}
+
+window.updatePriceGram = function(){ 
+    const materialSelect = document.getElementById('materialSelect');
+    const priceGram = document.getElementById('priceGram');
+    if(materialSelect.value) priceGram.value = rp(materialSelect.value / 1000); 
+}
+document.getElementById('materialSelect').addEventListener('change', window.updatePriceGram);
+
+// Create / Update Material
+window.saveMaterial = async function() {
+    const nameEl = document.getElementById('matName');
+    const priceEl = document.getElementById('matPrice');
+    const btn = document.getElementById('btnSaveMat');
+    
+    const name = nameEl.value.trim();
+    const price = Number(priceEl.value);
+
+    if(!name || price <= 0) return alert('Data tidak valid!');
+
+    // Jika sedang mode edit dan nama berubah, kita perlu hapus dokumen lama dan buat baru
+    if (editIndex !== -1 && editIndex !== name) {
+        // Hapus material lama (editIndex menyimpan nama lama)
+        await deleteDoc(doc(db, "materials", editIndex));
+    }
+
+    // Save/Overwrite (Create/Update)
+    await setDoc(doc(db, "materials", name), { name, price });
+
+    // Reset UI
+    nameEl.value = ''; priceEl.value = '';
+    editIndex = -1;
+    btn.innerText = 'Simpan';
+};
+
+window.editMaterial = function(name){
+    const item = materialsData.find(m => m.name === name);
+    if(item) {
+        document.getElementById('matName').value = item.name;
+        document.getElementById('matPrice').value = item.price;
+        editIndex = name; // Store original name as ID
+        document.getElementById('btnSaveMat').innerText = 'Update';
+        document.getElementById('matName').focus();
+    }
+}
+
+window.deleteMaterial = async function(name){ 
+    if(confirm(`Hapus material ${name}?`)){ 
+        await deleteDoc(doc(db, "materials", name));
+    } 
+}
+
+// --- CALCULATOR & ORDERS (CRUD: CREATE, UPDATE) ---
+
+window.generateInvoiceNum = function(){
+    if(isEditMode && currentEditingInv) return currentEditingInv;
+
     const y = new Date().getFullYear();
     let lastNum = parseInt(localStorage.getItem('inv_counter') || 1);
     const inv = `INV-${y}-${String(lastNum).padStart(4, '0')}`;
@@ -709,95 +548,119 @@ function generateInvoiceNum(){
     return inv;
 }
 
-// 2. KALKULASI & TRIGGER SAVE
-function calculateAndSave() {
+window.calculateAndSave = async function() {
     const weightVal = +document.getElementById('weight').value || 0;
     if(weightVal <= 0) return alert("Berat harus diisi!");
     
-    calculate(false); // Melakukan perhitungan
+    // 1. Lakukan Kalkulasi
+    const resultObj = calculate();
+
+    // 2. Simpan ke Firebase (Create / Update)
+    // Gunakan setDoc agar ID invoice tetap konsisten
+    await setDoc(doc(db, "orders", resultObj.inv), resultObj);
+
     showNotification();
-    
-    // Reset form setelah simpan jika tidak dalam mode edit
+
+    // 3. Reset Form jika bukan mode edit
     if (!isEditMode) {
+        // Naikkan counter lokal sementara agar UI responsif sebelum sync
+        localStorage.setItem('inv_counter', parseInt(localStorage.getItem('inv_counter') || 1) + 1);
+        generateInvoiceNum(); // Generate new number
+        
         document.getElementById('customer').value = '';
         document.getElementById('itemName').value = '';
         document.getElementById('weight').value = '';
+    } else {
+        // Jika mode edit, keluar mode edit setelah save
+        isEditMode = false;
+        currentEditingInv = "";
+        generateInvoiceNum(); // Kembali ke nomor baru
     }
-    isEditMode = false;
 }
 
-function calculate(isLoading = false){
-  const [h, m] = time.value.split(':').map(Number);
-  const hours = h + (m/60);
-  const s = JSON.parse(localStorage.getItem('setup_3d') || '{"depr":2100,"operator":2000,"watt":100,"kwh":1500,"maint":750}');
-  
-  const totalWeight = (+weight.value||0) + (+support.value||0) + (+waste.value||0);
-  const matCost = totalWeight * ((materialSelect.value||0) / 1000);
-  const electric = ((s.watt||0) / 1000) * hours * (s.kwh||0);
-  const opCost = (hours * ((s.depr||0) + (s.operator||0) + (s.maint||0))) + electric;
-  
-  const hpp = matCost + opCost;
-  const subtotal = hpp + (hpp * (+profit.value||0) / 100) + (hpp * (+risk.value||0) / 100);
+function calculate(){
+    const timeVal = document.getElementById('time').value;
+    const [h, m] = timeVal.split(':').map(Number);
+    const hours = h + (m/60);
+    const s = JSON.parse(localStorage.getItem('setup_3d') || '{"depr":2100,"operator":2000,"watt":100,"kwh":1500,"maint":750}');
+    
+    const weightVal = +document.getElementById('weight').value || 0;
+    const supportVal = +document.getElementById('support').value || 0;
+    const wasteVal = +document.getElementById('waste').value || 0;
+    const materialPrice = +document.getElementById('materialSelect').value || 0;
 
-  const discPercent = +discount.value || 0;
-  const discAmount = subtotal * (discPercent / 100);
-  const afterDisc = subtotal - discAmount;
-  const taxPercent = +taxActive.value || 0;
-  const taxAmount = afterDisc * (taxPercent / 100);
-  const grandTotal = afterDisc + taxAmount;
-  const netProfit = grandTotal - hpp - taxAmount;
+    const totalWeight = weightVal + supportVal + wasteVal;
+    const matCost = totalWeight * (materialPrice / 1000);
+    const electric = ((s.watt||0) / 1000) * hours * (s.kwh||0);
+    const opCost = (hours * ((s.depr||0) + (s.operator||0) + (s.maint||0))) + electric;
+    
+    const hpp = matCost + opCost;
+    
+    const profitVal = +document.getElementById('profit').value || 0;
+    const riskVal = +document.getElementById('risk').value || 0;
+    
+    const subtotal = hpp + (hpp * profitVal / 100) + (hpp * riskVal / 100);
 
-  document.getElementById('total').innerText = rp(grandTotal);
-  document.getElementById('breakdown').innerHTML = `HPP: ${rp(hpp)} | Pajak: ${rp(taxAmount)}`;
+    const discPercent = +document.getElementById('discount').value || 0;
+    const discAmount = subtotal * (discPercent / 100);
+    const afterDisc = subtotal - discAmount;
+    
+    const taxPercent = +document.getElementById('taxActive').value || 0;
+    const taxAmount = afterDisc * (taxPercent / 100);
+    
+    const grandTotal = afterDisc + taxAmount;
+    const netProfit = grandTotal - hpp - taxAmount;
 
-  // Gunakan ID yang ada jika sedang Edit, jika tidak buat baru
-  const currentInv = document.getElementById('invDisplay').innerText === '-' ? generateInvoiceNum() : document.getElementById('invDisplay').innerText;
+    document.getElementById('total').innerText = rp(grandTotal);
+    document.getElementById('breakdown').innerHTML = `HPP: ${rp(hpp)} | Pajak: ${rp(taxAmount)}`;
 
-  lastCalculatedData = {
-      inv: currentInv, 
-      subtotal: subtotal,
-      discAmount: discAmount,
-      taxAmount: taxAmount,
-      total: grandTotal,
-      hpp: hpp,
-      netProfit: netProfit,
-      status: paymentStatus.value
-  };
+    const currentInv = document.getElementById('invDisplay').innerText;
+    const custName = document.getElementById('customer').value;
+    const itemName = document.getElementById('itemName').value;
+    const payStatus = document.getElementById('paymentStatus').value;
+    
+    const matNameText = document.getElementById('materialSelect').options[document.getElementById('materialSelect').selectedIndex]?.text;
 
-  // Simpan ke history (lokal dulu, nanti disync firebase lewat listener)
-  saveToHistory({
-      inv: currentInv, cust: customer.value, item: itemName.value, total: grandTotal, status: paymentStatus.value,
-      hpp: hpp, netProfit: netProfit,
-      details: { 
-          weight: weight.value, time: time.value, support: support.value, waste: waste.value, 
-          profit: profit.value, risk: risk.value, discount: discPercent, tax: taxPercent,
-          matName: materialSelect.options[materialSelect.selectedIndex]?.text 
-      }
-  });
+    lastCalculatedData = {
+        inv: currentInv, 
+        total: grandTotal,
+        status: payStatus,
+        subtotal: subtotal,
+        discAmount: discAmount,
+        taxAmount: taxAmount,
+        hpp: hpp,
+        netProfit: netProfit
+    };
 
-  if(!isLoading && !isEditMode && currentInv.includes(localStorage.getItem('inv_counter') || '1')){
-      localStorage.setItem('inv_counter', parseInt(localStorage.getItem('inv_counter') || 1) + 1);
-  }
+    // Return data object untuk disimpan ke DB
+    return {
+        inv: currentInv, 
+        cust: custName, 
+        item: itemName, 
+        total: grandTotal, 
+        status: payStatus,
+        hpp: hpp, 
+        netProfit: netProfit,
+        timestamp: Date.now(), // Tambahan untuk sorting jika perlu
+        details: { 
+            weight: weightVal, time: timeVal, support: supportVal, waste: wasteVal, 
+            profit: profitVal, risk: riskVal, discount: discPercent, tax: taxPercent,
+            matName: matNameText 
+        }
+    };
 }
 
-function saveToHistory(o){
-    const h = getHistory(); 
-    const idx = h.findIndex(x => x.inv === o.inv);
-    if(idx > -1) h[idx] = o; else h.unshift(o);
-    localStorage.setItem('order_history', JSON.stringify(h));
-    renderHistory();
-}
+// --- HISTORY FUNCTIONS (CRUD: READ, DELETE, PREPARE UPDATE) ---
 
-// 3. RENDER HISTORY (Gunakan ID unik untuk tombol)
-function renderHistory(){
+window.renderHistory = function(){
     const list = document.getElementById('historyList'); 
     const searchTerm = document.getElementById('historySearch').value.toLowerCase();
     list.innerHTML = '';
     
     let totalRevenue = 0, totalProfit = 0;
-    const historyData = getHistory();
     const chartLabels = [], chartProfit = [], chartHPP = [];
 
+    // Chart Data (Last 7)
     historyData.slice(0, 7).reverse().forEach(item => {
         chartLabels.push(item.inv.split('-').pop()); 
         chartProfit.push(item.netProfit || 0);
@@ -805,12 +668,14 @@ function renderHistory(){
     });
 
     historyData.forEach((item) => {
-        if(item.cust.toLowerCase().includes(searchTerm) || item.item.toLowerCase().includes(searchTerm) || item.inv.toLowerCase().includes(searchTerm)) {
+        if((item.cust || "").toLowerCase().includes(searchTerm) || 
+           (item.item || "").toLowerCase().includes(searchTerm) || 
+           item.inv.toLowerCase().includes(searchTerm)) {
+            
             totalRevenue += item.total;
             totalProfit += (item.netProfit || 0);
             const badgeColor = item.status === 'LUNAS' ? 'bg-success' : 'bg-warning text-dark';
             
-            // TOMBOL MENGGUNAKAN inv BUKAN i
             list.innerHTML += `
                 <tr>
                     <td class="ps-4 py-3"><span class="fw-bold text-success" style="font-size:0.85rem">${item.inv}</span></td>
@@ -832,28 +697,70 @@ function renderHistory(){
     initChart(chartLabels, chartProfit, chartHPP);
 }
 
-// 4. LOAD DATA UNTUK EDIT
 window.loadFromHistory = function(invId){
-    const item = getHistory().find(x => x.inv === invId);
+    const item = historyData.find(x => x.inv === invId);
     if(!item) return;
-    isEditMode = true;
-    customer.value = item.cust; itemName.value = item.item || ''; 
-    document.getElementById('invDisplay').innerText = item.inv;
-    weight.value = item.details.weight; time.value = item.details.time;
-    support.value = item.details.support; waste.value = item.details.waste;
-    profit.value = item.details.profit; risk.value = item.details.risk;
-    discount.value = item.details.discount || 0;
-    taxActive.value = item.details.tax || 0;
-    paymentStatus.value = item.status || 'BELUM LUNAS';
     
+    isEditMode = true;
+    currentEditingInv = invId; // Set current editing ID
+    
+    document.getElementById('customer').value = item.cust; 
+    document.getElementById('itemName').value = item.item || ''; 
+    document.getElementById('invDisplay').innerText = item.inv;
+    document.getElementById('weight').value = item.details.weight; 
+    document.getElementById('time').value = item.details.time;
+    document.getElementById('support').value = item.details.support; 
+    document.getElementById('waste').value = item.details.waste;
+    document.getElementById('profit').value = item.details.profit; 
+    document.getElementById('risk').value = item.details.risk;
+    document.getElementById('discount').value = item.details.discount || 0;
+    document.getElementById('taxActive').value = item.details.tax || 0;
+    document.getElementById('paymentStatus').value = item.status || 'BELUM LUNAS';
+    
+    const materialSelect = document.getElementById('materialSelect');
     for(let opt of materialSelect.options) {
         if(opt.text === item.details.matName) { materialSelect.value = opt.value; break; }
     }
-    document.querySelector('[data-bs-target="#calc"]').click(); 
-    calculate(true);
+    
+    // Trigger tab switch
+    const calcTabBtn = document.querySelector('[data-bs-target="#calc"]');
+    if(calcTabBtn) {
+        new bootstrap.Tab(calcTabBtn).show();
+    }
+    
+    updatePriceGram();
+    calculate(); // Recalculate visually
 }
 
-// 5. CHART & PDF (Tetap)
+window.deleteHistory = async function(invId){ 
+    if(confirm(`Hapus invoice ${invId}?`)) {
+        await deleteDoc(doc(db, "orders", invId));
+    }
+};
+
+window.resetInvCounter = function(){ 
+    if(confirm('Reset nomor invoice ke 0001? (Tidak menghapus data lama)')){ 
+        localStorage.setItem('inv_counter', 1); 
+        isEditMode = false;
+        generateInvoiceNum(); 
+    } 
+}
+
+// --- SETUP SYNC (UPDATE CONFIG) ---
+const syncSetup = async () => {
+    const config = {};
+    ['depr', 'operator', 'watt', 'kwh', 'maint'].forEach(id => {
+        config[id] = +document.getElementById(id).value;
+    });
+    // Save to Firestore
+    await setDoc(doc(db, "settings", "config"), config);
+};
+['depr', 'operator', 'watt', 'kwh', 'maint'].forEach(id => {
+    const el = document.getElementById(id);
+    if(el) el.addEventListener('change', syncSetup);
+});
+
+// --- CHART & PDF ---
 function initChart(labels, profitData, hppData) {
     const ctx = document.getElementById('performanceChart').getContext('2d');
     if (performanceChart) performanceChart.destroy();
@@ -866,126 +773,43 @@ function initChart(labels, profitData, hppData) {
                 { label: 'Modal (HPP)', data: hppData, backgroundColor: '#3b82f6', borderRadius: 5 }
             ]
         },
-        options: { responsive: true, maintainAspectRatio: false, 
-            scales: { y: { stacked: true, ticks: { callback: v => 'Rp ' + v.toLocaleString() } }, x: { stacked: true } } 
+        options: { 
+            responsive: true, 
+            maintainAspectRatio: false, 
+            scales: { 
+                y: { stacked: true, ticks: { callback: v => 'Rp ' + v.toLocaleString() } }, 
+                x: { stacked: true } 
+            } 
         }
     });
 }
 
-function exportPDF(){
-  const { jsPDF } = window.jspdf;
-  const doc = new jsPDF('p', 'mm', 'a4');
-  const data = lastCalculatedData;
-  if(!data.inv) return alert("Hitung & Simpan data dahulu!");
-  // ... (Sisa kode PDF Anda tetap sama)
-  doc.text("INVOICE: " + data.inv, 15, 20);
-  doc.save(`${data.inv}.pdf`);
+window.exportPDF = function(){
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF('p', 'mm', 'a4');
+    
+    // Recalculate current view data
+    calculate();
+    const data = lastCalculatedData;
+    
+    if(!data.inv) return alert("Silahkan Hitung & Simpan data terlebih dahulu!");
+
+    doc.setFontSize(16);
+    doc.text("SIMPANG STUDIO INVOICE", 15, 20);
+    doc.setFontSize(12);
+    doc.text("Invoice: " + data.inv, 15, 30);
+    doc.text("Customer: " + (document.getElementById('customer').value || "Pelanggan"), 15, 40);
+    doc.text("Total: " + rp(data.total), 15, 50);
+    doc.text("Status: " + data.status, 15, 60);
+    
+    doc.save(`${data.inv}.pdf`);
 }
 
-document.addEventListener('DOMContentLoaded', () => {
-    renderInventory(); renderHistory(); generateInvoiceNum();
-});
-</script>
+// Start
+renderInventory();
+renderHistory();
+generateInvoiceNum();
 
-<script type="module">
-  import { initializeApp, getApps, getApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-  import { getFirestore, doc, setDoc, collection, onSnapshot, deleteDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
-
-  const firebaseConfig = {
-    apiKey: "AIzaSyD3pKjssC6NRKXDfhHsr65al9maZto2IgQ",
-    authDomain: "simpang-studio.firebaseapp.com",
-    projectId: "simpang-studio",
-    storageBucket: "simpang-studio.firebasestorage.app",
-    messagingSenderId: "776018160572",
-    appId: "1:776018160572:web:e6d11f9bb1db79173959b9",
-    measurementId: "G-R5N8MMM8HZ"
-  };
-
-  const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
-  const db = getFirestore(app);
-
-  // --- SYNC REALTIME ---
-  function initRealtimeSync() {
-    onSnapshot(collection(db, "orders"), (snapshot) => {
-      const orders = [];
-      snapshot.forEach(doc => orders.push(doc.data()));
-      orders.sort((a, b) => b.inv.localeCompare(a.inv));
-      localStorage.setItem('order_history', JSON.stringify(orders));
-      renderHistory(); 
-    });
-
-    onSnapshot(collection(db, "materials"), (snapshot) => {
-      const materials = [];
-      snapshot.forEach(doc => materials.push(doc.data()));
-      localStorage.setItem('materials', JSON.stringify(materials));
-      renderInventory();
-      loadMaterialSelect();
-    });
-
-    onSnapshot(doc(db, "settings", "config"), (docSnap) => {
-      if (docSnap.exists()) {
-        const data = docSnap.data();
-        localStorage.setItem('setup_3d', JSON.stringify(data));
-        ['depr', 'operator', 'watt', 'kwh', 'maint', 'profit', 'risk'].forEach(key => {
-          const el = document.getElementById(key);
-          if (el && data[key]) el.value = data[key];
-        });
-      }
-    });
-  }
-
-  // --- CRUD FUNCTIONS (Globalized for HTML) ---
-  window.saveMaterial = async () => {
-    const name = document.getElementById('matName').value.trim();
-    const price = Number(document.getElementById('matPrice').value);
-    if (!name || price <= 0) return alert('Input tidak valid');
-    await setDoc(doc(db, "materials", name), { name, price });
-    document.getElementById('matName').value = '';
-    document.getElementById('matPrice').value = '';
-  };
-
-  window.deleteMaterial = async (name) => {
-    if(confirm('Hapus material?')) await deleteDoc(doc(db, "materials", name));
-  };
-
-  // CRUD SETUP & PROFIT/RISK
-  const syncSetup = async () => {
-      const config = {};
-      ['depr', 'operator', 'watt', 'kwh', 'maint', 'profit', 'risk'].forEach(id => {
-          config[id] = document.getElementById(id).value;
-      });
-      await setDoc(doc(db, "settings", "config"), config);
-  };
-  ['depr', 'operator', 'watt', 'kwh', 'maint', 'profit', 'risk'].forEach(id => {
-      document.getElementById(id).addEventListener('change', syncSetup);
-  });
-
-  // CRUD RIWAYAT
-  window.deleteHistory = async (invId) => {
-    if(confirm(`Hapus invoice ${invId}?`)) {
-        await deleteDoc(doc(db, "orders", invId));
-    }
-  };
-
-  document.addEventListener('click', async (e) => {
-    if (e.target.innerText.toUpperCase().includes('HITUNG & SIMPAN')) {
-      setTimeout(async () => {
-        const history = getHistory();
-        if (history.length > 0) {
-          // Cari data yang ID-nya sama dengan yang baru saja dihitung
-          const currentInv = document.getElementById('invDisplay').innerText;
-          const dataToSync = history.find(x => x.inv === currentInv);
-          if (dataToSync) {
-            await setDoc(doc(db, "orders", dataToSync.inv), dataToSync);
-          }
-        }
-      }, 500);
-    }
-  });
-
-  initRealtimeSync();
 </script>
 </body>
 </html>
-
-
