@@ -396,27 +396,6 @@ body.dark .bg-light { background-color: var(--bg-dark) !important; color: var(--
     </div>
 </div>
 
-<div class="modal fade" id="loginModal" tabindex="-1" aria-hidden="true">
-  <div class="modal-dialog modal-dialog-centered">
-    <div class="modal-content border-0 shadow" style="border-radius: 16px;">
-      <div class="modal-body p-4">
-        <h5 class="fw-800 mb-3">Admin Login</h5>
-        <input type="email" id="loginEmail" class="form-control mb-2" placeholder="Email Admin">
-        <input type="password" id="loginPassword" class="form-control mb-3" placeholder="Password">
-        <button class="btn btn-primary-studio w-100 text-white" onclick="handleLogin()">Masuk</button>
-        <button class="btn btn-link w-100 btn-sm text-muted mt-2" data-bs-dismiss="modal">Batal</button>
-      </div>
-    </div>
-  </div>
-</div>
-
-<div id="authStatus" class="text-center mb-3">
-    <button class="btn btn-sm btn-light rounded-pill px-3" data-bs-toggle="modal" data-bs-target="#loginModal" id="loginBtn">🔐 Admin Login</button>
-</div>
-
-
-
-
 <script>
 const rp = n => 'Rp ' + (Math.round(n) || 0).toLocaleString('id-ID');
 let editIndex = -1;
@@ -812,10 +791,9 @@ document.addEventListener('DOMContentLoaded', () => {
     generateInvoiceNum();
 });
     
-</script> 
 <script type="module">
   import { initializeApp, getApps, getApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-  import { getFirestore, doc, setDoc, collection, onSnapshot, deleteDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+  import { getFirestore, doc, setDoc, collection, onSnapshot, deleteDoc, getDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
   const firebaseConfig = {
     apiKey: "AIzaSyD3pKjssC6NRKXDfhHsr65al9maZto2IgQ",
@@ -830,9 +808,11 @@ document.addEventListener('DOMContentLoaded', () => {
   const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
   const db = getFirestore(app);
 
-  // --- 1. SINKRONISASI REAL-TIME (DARI CLOUD KE UI) ---
+  // ==========================================
+  // 1. REAL-TIME SYNC (READ)
+  // ==========================================
   function initRealtimeSync() {
-    // Sinkronisasi Riwayat
+    // Sync Riwayat Pesanan
     onSnapshot(collection(db, "orders"), (snapshot) => {
       const orders = [];
       snapshot.forEach(doc => orders.push(doc.data()));
@@ -841,87 +821,114 @@ document.addEventListener('DOMContentLoaded', () => {
       if (typeof renderHistory === 'function') renderHistory();
     });
 
-    // Sinkronisasi Material
+    // Sync Material
     onSnapshot(collection(db, "materials"), (snapshot) => {
       const materials = [];
-      snapshot.forEach(doc => materials.push({ id: doc.id, ...doc.data() }));
+      snapshot.forEach(doc => materials.push(doc.data()));
       localStorage.setItem('materials', JSON.stringify(materials));
       if (typeof renderInventory === 'function') renderInventory();
     });
 
-    // Sinkronisasi Setup
+    // Sync Setup & Adjustable Parameters (Profit/Risk)
     onSnapshot(doc(db, "settings", "config"), (docSnap) => {
       if (docSnap.exists()) {
-        const setupData = docSnap.data();
-        localStorage.setItem('setup_3d', JSON.stringify(setupData));
-        // Update input UI
-        Object.keys(setupData).forEach(key => {
+        const data = docSnap.data();
+        localStorage.setItem('setup_3d', JSON.stringify(data));
+        // Update UI secara otomatis
+        Object.keys(data).forEach(key => {
           const el = document.getElementById(key);
-          if (el) el.value = setupData[key];
+          if (el) el.value = data[key];
         });
       }
     });
   }
 
-  // --- 2. FUNGSI PENGIRIMAN DATA KE CLOUD ---
-
-  // Simpan Material (Overriding fungsi saveMaterial lama)
+  // ==========================================
+  // 2. CRUD MATERIAL (Create, Update, Delete)
+  // ==========================================
   window.saveMaterial = async () => {
     const name = document.getElementById('matName').value.trim();
     const price = Number(document.getElementById('matPrice').value);
-    if (!name || price <= 0) return alert('Data tidak valid!');
+    if (!name || price <= 0) return alert('Input tidak valid');
 
     try {
-      // Gunakan Nama sebagai ID dokumen agar tidak duplikat
+      // Menggunakan name sebagai ID (Update otomatis jika nama sama)
       await setDoc(doc(db, "materials", name), { name, price });
       document.getElementById('matName').value = '';
       document.getElementById('matPrice').value = '';
       showNotification();
-    } catch (e) { console.error("Gagal simpan material:", e); }
+    } catch (e) { console.error("Error Material:", e); }
   };
 
-  // Hapus Material (Overriding fungsi deleteMaterial lama)
   window.deleteMaterial = async (index) => {
-    if(confirm('Hapus material?')){
+    if(confirm('Hapus material ini dari Cloud?')){
       const m = JSON.parse(localStorage.getItem('materials'))[index];
       await deleteDoc(doc(db, "materials", m.name));
     }
   };
 
-  // Simpan Setup Otomatis saat input berubah
-  const setupFields = ['depr', 'operator', 'watt', 'kwh', 'maint'];
-  setupFields.forEach(id => {
-    document.getElementById(id)?.addEventListener('change', async () => {
-      const currentSetup = JSON.parse(localStorage.getItem('setup_3d') || '{}');
-      try {
-        await setDoc(doc(db, "settings", "config"), currentSetup);
-        console.log("Setup Cloud Updated");
-      } catch (e) { console.error("Gagal update setup:", e); }
+  // ==========================================
+  // 3. CRUD SETUP & ADJ (Profit & Risk)
+  // ==========================================
+  // Fungsi untuk menyimpan perubahan field ke cloud secara otomatis
+  const syncFieldToCloud = (fieldIds) => {
+    fieldIds.forEach(id => {
+      document.getElementById(id)?.addEventListener('change', async () => {
+        const config = JSON.parse(localStorage.getItem('setup_3d') || '{}');
+        // Tambahkan profit & risk ke dalam objek config
+        config.profit = document.getElementById('profit').value;
+        config.risk = document.getElementById('risk').value;
+        
+        try {
+          await setDoc(doc(db, "settings", "config"), config);
+        } catch (e) { console.error("Error Setup Sync:", e); }
+      });
     });
-  });
+  };
+  
+  // Daftarkan field setup + profit & risk
+  syncFieldToCloud(['depr', 'operator', 'watt', 'kwh', 'maint', 'profit', 'risk']);
 
-  // --- 3. LOGIKA TOMBOL SIMPAN KALKULATOR ---
+  // ==========================================
+  // 4. CRUD RIWAYAT (Create/Update & Delete)
+  // ==========================================
+  
+  // Fungsi Delete Riwayat dari Firebase
+  window.deleteHistory = async (i) => {
+    if(confirm('Hapus pesanan ini secara permanen dari Cloud?')){
+      const h = JSON.parse(localStorage.getItem('order_history'));
+      const targetInv = h[i].inv;
+      try {
+        await deleteDoc(doc(db, "orders", targetInv));
+      } catch (e) { alert("Gagal menghapus"); }
+    }
+  };
+
+  // Fungsi Save/Update Pesanan saat klik "HITUNG & SIMPAN"
   document.addEventListener('click', async (event) => {
     if (event.target.innerText.toUpperCase().includes('HITUNG & SIMPAN')) {
-      // Beri jeda sebentar agar kalkulasi local selesai
+      // Tunggu proses calculate() lokal selesai
       setTimeout(async () => {
         const history = JSON.parse(localStorage.getItem('order_history') || '[]');
         if (history.length > 0) {
           const dataTerbaru = history[0]; 
           try {
+            // setDoc akan mengupdate jika Invoice sudah ada (Edit Mode)
+            // atau membuat baru jika Invoice belum ada (New Mode)
             await setDoc(doc(db, "orders", dataTerbaru.inv), {
               ...dataTerbaru,
               last_sync: new Date().toISOString()
             });
-          } catch (e) { console.error("Gagal simpan order:", e); }
+            console.log("Sync Cloud Berhasil");
+          } catch (e) { console.error("Gagal Simpan Ke Cloud:", e); }
         }
-      }, 500);
+      }, 600);
     }
   });
 
-  // Jalankan sync saat aplikasi dibuka
   window.addEventListener('load', initRealtimeSync);
 </script>
 </body>
 </html>
+
 
