@@ -1,246 +1,189 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
+    <meta charset="UTF-8">
+    <title>Simpang Studio | Professional 3D Suite</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
 
-<meta charset="UTF-8">
-<title>Simpang Studio | Professional 3D Suite</title>
-<meta name="viewport" content="width=device-width, initial-scale=1">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
-<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        :root { 
+            --primary: #10b981; 
+            --primary-dark: #059669;
+            --bg-light: #f1f5f9;
+            --card-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05);
+        }
 
-<style>
-:root { 
-    --primary: #10b981; 
-    --primary-dark: #059669;
-    --bg-light: #f8fafc;
-    --card-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
-    /* Dark Mode Palette - Eye Friendly Optimization */
-    --bg-dark: #0f172a;
-    --card-dark: #1e293b;
-    --border-dark: #334155;
-    --text-dark: #f1f5f9;
-    --text-muted-dark: #94a3b8;
-}
+        body { 
+            background: var(--bg-light); 
+            font-family: 'Inter', sans-serif; 
+            color: #1e293b;
+            padding-top: 20px;
+        }
 
-body { 
-    background: var(--bg-light); 
-    font-family: 'Inter', sans-serif; 
-    color: #1e293b;
-    transition: background 0.3s ease, color 0.3s ease;
-}
+        /* --- LOGIN AREA POJOK KANAN ATAS --- */
+        .admin-login-wrapper {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            z-index: 1050;
+        }
 
-/* Updated Dark Mode - Low Strain Contrast */
-body.dark { background: var(--bg-dark); color: var(--text-dark); }
+        .glass-login-card {
+            background: rgba(255, 255, 255, 0.8);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.5);
+            padding: 10px 18px;
+            border-radius: 50px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+            display: flex;
+            align-items: center;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
 
-.app-container { max-width: 1000px; margin: 2rem auto; }
+        .glass-login-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(16, 185, 129, 0.15);
+            background: white;
+        }
 
-.card { 
-    border: none; 
-    border-radius: 16px; 
-    box-shadow: var(--card-shadow); 
-    background: #ffffff;
-    overflow: hidden;
-    margin-bottom: 1.5rem;
-}
+        /* --- UI COMPONENTS --- */
+        .app-container { max-width: 1000px; margin: 2rem auto; position: relative; }
 
-body.dark .card { background: var(--card-dark); border: 1px solid var(--border-dark); }
+        .card { 
+            border: none; 
+            border-radius: 20px; 
+            box-shadow: var(--card-shadow); 
+            background: #ffffff;
+            margin-bottom: 1.5rem;
+        }
 
-.nav-pills { background: #e2e8f0; padding: 6px; border-radius: 12px; }
-body.dark .nav-pills { background: var(--border-dark); }
+        .nav-pills { background: #e2e8f0; padding: 6px; border-radius: 14px; display: inline-flex; }
+        .nav-pills .nav-link { 
+            color: #64748b; 
+            font-weight: 600; 
+            border-radius: 10px; 
+            padding: 10px 25px;
+        }
+        .nav-pills .nav-link.active { 
+            background: var(--primary); 
+            color: white; 
+            box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3); 
+        }
 
-.nav-pills .nav-link { 
-    color: #64748b; 
-    font-weight: 600; 
-    border-radius: 8px; 
-    padding: 10px 20px;
-}
-body.dark .nav-pills .nav-link { color: var(--text-muted-dark); }
+        .result-display {
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            color: white;
+            padding: 2rem;
+            border-radius: 20px;
+            text-align: center;
+            margin-bottom: 1.5rem;
+        }
 
-.nav-pills .nav-link.active { background: var(--primary); color: white; box-shadow: 0 4px 6px -1px rgba(16, 185, 129, 0.4); }
+        .btn-primary-studio {
+            background: var(--primary);
+            border: none;
+            padding: 12px;
+            font-weight: 700;
+            border-radius: 12px;
+            color: white;
+            transition: 0.3s;
+        }
 
-.result-display {
-    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
-    color: white;
-    padding: 2rem;
-    border-radius: 16px;
-    text-align: center;
-    margin-bottom: 1.5rem;
-}
+        .btn-primary-studio:hover { background: var(--primary-dark); transform: translateY(-2px); }
 
-.result-display h2 { font-weight: 800; font-size: 2.5rem; margin: 0; }
-.result-display p { opacity: 0.9; font-weight: 500; margin-bottom: 5px; }
+        .stat-card-new {
+            padding: 1.25rem;
+            border-radius: 20px;
+            background: white;
+            border: 1px solid #edf2f7;
+        }
 
-.form-label { font-weight: 600; color: #475569; font-size: 0.85rem; margin-bottom: 0.5rem; }
-body.dark .form-label { color: var(--text-muted-dark); }
-
-.form-control, .form-select {
-    border-radius: 10px;
-    padding: 10px 14px;
-    border: 1px solid #e2e8f0;
-}
-
-body.dark .form-control, body.dark .form-select { 
-    background: var(--bg-dark); 
-    border-color: var(--border-dark); 
-    color: var(--text-dark); 
-}
-
-body.dark .form-control::placeholder { color: #4b5563; }
-
-.btn-primary-studio {
-    background: var(--primary);
-    border: none;
-    padding: 12px;
-    font-weight: 700;
-    border-radius: 10px;
-    transition: 0.3s;
-}
-
-.btn-primary-studio:hover { background: var(--primary-dark); transform: translateY(-2px); }
-
-.btn-action {
-    padding: 6px 12px;
-    border-radius: 8px;
-    font-size: 0.75rem;
-    font-weight: 700;
-    transition: 0.2s;
-    border: 1px solid transparent;
-}
-
-.btn-edit { color: #3b82f6; border-color: rgba(59, 130, 246, 0.3); background: rgba(59, 130, 246, 0.05); }
-.btn-edit:hover { background: #3b82f6; color: white; }
-
-.btn-del { color: #ef4444; border-color: rgba(239, 68, 68, 0.3); background: rgba(239, 68, 68, 0.05); }
-.btn-del:hover { background: #ef4444; color: white; }
-
-.badge-custom { padding: 4px 10px; border-radius: 6px; font-weight: 600; background: #f1f5f9; color: #475569; font-size: 0.75rem; }
-body.dark .badge-custom { background: var(--border-dark); color: #cbd5e1; }
-
-.stat-card-new {
-    padding: 1.25rem;
-    border-radius: 16px;
-    background: white;
-    border: 1px solid #e2e8f0;
-    height: 100%;
-    transition: transform 0.2s;
-}
-body.dark .stat-card-new { background: var(--card-dark); border-color: var(--border-dark); }
-
-.stat-icon {
-    width: 40px;
-    height: 40px;
-    border-radius: 10px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    margin-bottom: 10px;
-    font-size: 1.2rem;
-}
-
-.search-box-wrapper {
-    position: relative;
-    display: flex;
-    align-items: center;
-}
-.search-box-wrapper .form-control {
-    padding-left: 15px;
-    border-radius: 12px;
-    background: #f1f5f9;
-    border: none;
-}
-body.dark .search-box-wrapper .form-control { background: var(--border-dark); }
-
-.table thead th {
-    text-transform: uppercase;
-    font-size: 0.7rem;
-    letter-spacing: 0.05em;
-    font-weight: 700;
-    color: #64748b;
-    padding: 15px;
-}
-body.dark .table thead th { color: var(--text-muted-dark); }
-body.dark .table { color: var(--text-dark); border-color: var(--border-dark); }
-
-.chart-container {
-    position: relative;
-    height: 250px;
-    width: 100%;
-}
-
-/* Toast Notification Styles */
-#studio-toast {
-    position: fixed; top: 20px; right: 20px; z-index: 10000;
-    padding: 15px 25px; border-radius: 12px; background: var(--primary);
-    color: white; font-weight: bold; box-shadow: 0 10px 15px rgba(0,0,0,0.2);
-    display: none; animation: slideIn 0.3s ease forwards;
-}
-@keyframes slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
-
-body.dark .bg-light { background-color: var(--bg-dark) !important; color: var(--primary) !important; }
-</style>
+        #studio-toast {
+            position: fixed; top: 20px; left: 50%; transform: translateX(-50%);
+            z-index: 10000; padding: 15px 30px; border-radius: 50px; 
+            background: #1e293b; color: white; font-weight: 600;
+            display: none; animation: fadeInDown 0.4s ease;
+        }
+        @keyframes fadeInDown { from { transform: translate(-50%, -20px); opacity: 0; } to { transform: translate(-50%, 0); opacity: 1; } }
+        
+        .chart-container { position: relative; height: 250px; width: 100%; }
+        .btn-action { padding: 6px 12px; border-radius: 8px; font-size: 0.75rem; font-weight: 700; border: 1px solid transparent; }
+        .btn-edit { color: #3b82f6; background: rgba(59, 130, 246, 0.05); }
+        .btn-del { color: #ef4444; background: rgba(239, 68, 68, 0.05); }
+        .badge-custom { padding: 4px 10px; border-radius: 6px; font-weight: 600; background: #f1f5f9; color: #475569; font-size: 0.75rem; }
+    </style>
 </head>
 <body>
 
 <div id="studio-toast">Data Berhasil Disimpan! ✅</div>
-    
+
+<div class="admin-login-wrapper">
+    <div id="authStatus">
+        <button class="glass-login-card border-0" data-bs-toggle="modal" data-bs-target="#loginModal">
+            <span class="me-2">🔐</span>
+            <span class="fw-bold text-dark" style="font-size: 0.85rem;">Admin Login</span>
+        </button>
+    </div>
+</div>
+
 <div class="app-container px-3">
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <div>
-            <h2 class="fw-800 m-0" style="letter-spacing: -1px;">Simpang<span style="color:var(--primary)">Studio.</span></h2>
-            <p class="text-muted small m-0">Professional 3D Printing Business Manager</p>
-        </div>
-        <button class="btn btn-sm btn-outline-secondary border-0" onclick="toggleDark()" id="themeBtn">🌙 Mode</button> 
+    <div class="mb-5">
+        <h2 class="fw-800 m-0" style="letter-spacing: -1.5px; font-size: 2.5rem;">Simpang<span style="color:var(--primary)">Studio.</span></h2>
+        <p class="text-muted fw-500 m-0">Professional 3D Printing Business Manager</p>
     </div>
 
     <div class="modal fade" id="loginModal" tabindex="-1" aria-hidden="true">
-  <div class="modal-dialog modal-dialog-centered">
-    <div class="modal-content border-0 shadow" style="border-radius: 16px;">
-      <div class="modal-body p-4">
-        <h5 class="fw-800 mb-3">Admin Login</h5>
-        <input type="email" id="loginEmail" class="form-control mb-2" placeholder="Email Admin">
-        <input type="password" id="loginPassword" class="form-control mb-3" placeholder="Password">
-        <button class="btn btn-primary-studio w-100 text-white" onclick="handleLogin()">Masuk</button>
-        <button class="btn btn-link w-100 btn-sm text-muted mt-2" data-bs-dismiss="modal">Batal</button>
-      </div>
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content border-0 shadow-lg" style="border-radius: 24px;">
+                <div class="modal-body p-4 p-md-5 text-center">
+                    <div class="d-inline-block bg-light p-3 rounded-circle mb-3">🔒</div>
+                    <h4 class="fw-800 mb-4">Admin Access</h4>
+                    <input type="email" id="loginEmail" class="form-control mb-3" placeholder="Email Admin">
+                    <input type="password" id="loginPassword" class="form-control mb-4" placeholder="Password">
+                    <button class="btn btn-primary-studio w-100 mb-2" onclick="handleLogin()">Masuk</button>
+                    <button class="btn btn-link btn-sm text-muted" data-bs-dismiss="modal">Batal</button>
+                </div>
+            </div>
+        </div>
     </div>
-  </div>
-</div>
 
-<div id="authStatus" class="text-center mb-3">
-    <button class="btn btn-sm btn-light rounded-pill px-3" data-bs-toggle="modal" data-bs-target="#loginModal" id="loginBtn">🔐 Admin Login</button>
-</div>
-
-    <ul class="nav nav-pills mb-4 justify-content-center" id="mainTabs">
-        <li class="nav-item"><button class="nav-link active" data-bs-toggle="tab" data-bs-target="#calc">⚡ Kalkulator</button></li>
-        <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#history">📜 Riwayat</button></li>
-        <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#inventory">📦 Material</button></li>
-        <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#setup">⚙️ Setup</button></li>
-    </ul>
+    <div class="text-center mb-4">
+        <ul class="nav nav-pills" id="mainTabs">
+            <li class="nav-item"><button class="nav-link active" data-bs-toggle="tab" data-bs-target="#calc">⚡ Kalkulator</button></li>
+            <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#history">📜 Riwayat</button></li>
+            <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#inventory">📦 Material</button></li>
+            <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#setup">⚙️ Setup</button></li>
+        </ul>
+    </div>
 
     <div class="tab-content">
         <div class="tab-pane fade show active" id="calc">
             <div class="row">
                 <div class="col-lg-8">
                     <div class="card"><div class="card-body p-4">
-                        <h6 class="fw-bold mb-4 text-uppercase tracking-wider">Identitas Pesanan</h6>
+                        <h6 class="fw-bold mb-4 text-uppercase small text-muted">Identitas Pesanan</h6>
                         <div class="row g-3">
                             <div class="col-md-6">
                                 <label class="form-label">Nama Pelanggan</label>
-                                <input class="form-control" id="customer" placeholder="Siapa pemesannya?">
+                                <input class="form-control" id="customer" placeholder="Nama pemesan">
                             </div>
                             <div class="col-md-6">
                                 <label class="form-label">Nama Item / Model</label>
-                                <input class="form-control" id="itemName" placeholder="Misal: Gearbox Part V1">
+                                <input class="form-control" id="itemName" placeholder="Contoh: Gearbox Part">
                             </div>
                         </div>
                     </div></div>
 
                     <div class="card"><div class="card-body p-4">
-                        <h6 class="fw-bold mb-4 text-uppercase tracking-wider">Parameter Teknis</h6>
+                        <h6 class="fw-bold mb-4 text-uppercase small text-muted">Parameter Teknis</h6>
                         <div class="row g-3">
                             <div class="col-md-6">
                                 <label class="form-label">Pilih Material</label>
@@ -251,7 +194,7 @@ body.dark .bg-light { background-color: var(--bg-dark) !important; color: var(--
                                 <input type="number" class="form-control" id="weight" placeholder="0">
                             </div>
                             <div class="col-md-3 col-6">
-                                <label class="form-label">Waktu (Jam:Menit)</label>
+                                <label class="form-label">Waktu (H:M)</label>
                                 <input type="time" class="form-control" id="time" value="01:00">
                             </div>
                             <div class="col-md-3 col-6">
@@ -263,7 +206,7 @@ body.dark .bg-light { background-color: var(--bg-dark) !important; color: var(--
                                 <input type="number" class="form-control" id="waste" value="0">
                             </div>
                             <div class="col-md-6">
-                                <label class="form-label">Harga per Gram (Filamen)</label>
+                                <label class="form-label">Harga per Gram</label>
                                 <input class="form-control bg-light fw-bold" id="priceGram" readonly>
                             </div>
                         </div>
@@ -272,46 +215,34 @@ body.dark .bg-light { background-color: var(--bg-dark) !important; color: var(--
 
                 <div class="col-lg-4">
                     <div class="result-display shadow-sm">
-                        <p>TOTAL HARGA JUAL</p>
+                        <p class="small text-uppercase fw-600 mb-1">Total Harga Jual</p>
                         <h2 id="total">Rp 0</h2>
                         <div id="breakdown" class="small mt-2 opacity-75"></div>
                     </div>
 
                     <div class="card"><div class="card-body p-4">
-                        <h6 class="fw-bold mb-3 text-uppercase tracking-wider">Adjustment</h6>
-                        <div class="row g-2">
-                            <div class="col-6 mb-2">
-                                <label class="form-label">Profit (%)</label>
-                                <input type="number" class="form-control" id="profit" value="30">
-                            </div>
-                            <div class="col-6 mb-2">
-                                <label class="form-label">Risk (%)</label>
-                                <input type="number" class="form-control" id="risk" value="10">
-                            </div>
-                            <div class="col-6 mb-3">
-                                <label class="form-label text-danger">Diskon (%)</label>
-                                <input type="number" class="form-control border-danger" id="discount" value="0">
-                            </div>
-                            <div class="col-6 mb-3">
-                                <label class="form-label text-primary">Pajak (PPN)</label>
-                                <select id="taxActive" class="form-select border-primary">
-                                    <option value="0">Tanpa PPN</option>
-                                    <option value="11">PPN 11%</option>
+                        <h6 class="fw-bold mb-3 text-uppercase small text-muted">Adjustment</h6>
+                        <div class="row g-2 mb-3">
+                            <div class="col-6"><label class="form-label small">Profit (%)</label><input type="number" class="form-control" id="profit" value="30"></div>
+                            <div class="col-6"><label class="form-label small">Risk (%)</label><input type="number" class="form-control" id="risk" value="10"></div>
+                            <div class="col-6"><label class="form-label small text-danger">Disk (%)</label><input type="number" class="form-control border-danger" id="discount" value="0"></div>
+                            <div class="col-6"><label class="form-label small">PPN</label>
+                                <select id="taxActive" class="form-select">
+                                    <option value="0">0%</option>
+                                    <option value="11">11%</option>
                                 </select>
                             </div>
-                            <div class="col-12 mb-3">
-                                <label class="form-label fw-bold">Status Pembayaran</label>
-                                <select id="paymentStatus" class="form-select border-success fw-bold text-success">
-                                    <option value="LUNAS">LUNAS / PAID</option>
-                                    <option value="BELUM LUNAS">BELUM LUNAS / UNPAID</option>
+                            <div class="col-12 mt-2">
+                                <label class="form-label small fw-bold">Status Bayar</label>
+                                <select id="paymentStatus" class="form-select border-success text-success fw-bold">
+                                    <option value="LUNAS">LUNAS</option>
+                                    <option value="BELUM LUNAS">BELUM LUNAS</option>
                                 </select>
                             </div>
                         </div>
-                        <button class="btn btn-primary-studio w-100 text-white mb-2 shadow-sm" onclick="calculateAndSave()">HITUNG & SIMPAN</button>
+                        <button class="btn btn-primary-studio w-100 mb-2 shadow-sm" onclick="calculateAndSave()">HITUNG & SIMPAN</button>
                         <button class="btn btn-dark w-100 border-0 py-2 fw-bold" onclick="exportPDF()">📄 CETAK INVOICE</button>
-                        <div class="mt-3 text-center border-top pt-2">
-                            <span class="text-muted small">No. Terakhir: </span><span id="invDisplay" class="fw-bold small">-</span>
-                        </div>
+                        <div class="mt-3 text-center border-top pt-2"><span id="invDisplay" class="fw-bold small text-muted">-</span></div>
                     </div></div>
                 </div>
             </div>
@@ -319,77 +250,42 @@ body.dark .bg-light { background-color: var(--bg-dark) !important; color: var(--
 
         <div class="tab-pane fade" id="history">
             <div class="row g-3 mb-4">
-                <div class="col-md-3">
+                <div class="col-md-4">
                     <div class="stat-card-new shadow-sm">
-                        <div class="stat-icon bg-success bg-opacity-10 text-success">💰</div>
-                        <small class="text-muted fw-600 d-block mb-1">Total Omzet</small>
-                        <h4 class="fw-800 m-0" id="statRevenue" style="color: var(--primary)">Rp 0</h4>
+                        <small class="text-muted fw-600 d-block">Total Omzet</small>
+                        <h4 class="fw-800 m-0 text-success" id="statRevenue">Rp 0</h4>
                     </div>
                 </div>
-                <div class="col-md-3">
+                <div class="col-md-4">
                     <div class="stat-card-new shadow-sm">
-                        <div class="stat-icon bg-info bg-opacity-10 text-info">📈</div>
-                        <small class="text-muted fw-600 d-block mb-1">Total Profit</small>
+                        <small class="text-muted fw-600 d-block">Total Profit</small>
                         <h4 class="fw-800 m-0 text-info" id="statProfit">Rp 0</h4>
                     </div>
                 </div>
-                <div class="col-md-3">
-                    <div class="stat-card-new shadow-sm">
-                        <div class="stat-icon bg-primary bg-opacity-10 text-primary">📦</div>
-                        <small class="text-muted fw-600 d-block mb-1">Total Pesanan</small>
-                        <h4 class="fw-800 m-0 text-primary" id="statOrders">0</h4>
-                    </div>
-                </div>
-                <div class="col-md-3">
-                    <div class="stat-card-new shadow-sm">
-                        <div class="stat-icon bg-warning bg-opacity-10 text-warning">🔍</div>
-                        <small class="text-muted fw-600 d-block mb-1">Cari Data</small>
-                        <div class="search-box-wrapper">
-                            <input type="text" id="historySearch" class="form-control form-control-sm" placeholder="Nama/Item/Invoice..." onkeyup="renderHistory()">
-                        </div>
-                    </div>
+                <div class="col-md-4">
+                    <input type="text" id="historySearch" class="form-control h-100" placeholder="Cari invoice/nama..." onkeyup="renderHistory()">
                 </div>
             </div>
-
-            <div class="card mb-4">
-                <div class="card-body">
-                    <h6 class="fw-bold mb-3 text-uppercase tracking-wider">Performance Analytics (Profit vs Modal)</h6>
-                    <div class="chart-container">
-                        <canvas id="performanceChart"></canvas>
-                    </div>
-                </div>
-            </div>
-
-            <div class="card"><div class="card-body p-0">
-                <div class="p-4 d-flex justify-content-between align-items-center border-bottom">
-                    <h5 class="fw-800 m-0">Riwayat Pesanan</h5>
-                    <button class="btn btn-sm btn-outline-danger px-3 rounded-pill fw-bold" onclick="clearHistory()" style="font-size: 0.7rem;">HAPUS SEMUA</button>
-                </div>
+            <div class="card mb-4"><div class="card-body"><div class="chart-container"><canvas id="performanceChart"></canvas></div></div></div>
+            <div class="card">
                 <div class="table-responsive">
                     <table class="table table-hover align-middle mb-0">
-                        <thead>
-                            <tr>
-                                <th>Invoice</th>
-                                <th>Pelanggan</th>
-                                <th>Item / Model</th>
-                                <th>Status</th>
-                                <th>Total</th>
-                                <th class="text-center">Aksi</th>
-                            </tr>
+                        <thead class="bg-light">
+                            <tr><th class="ps-4">Invoice</th><th>Pelanggan</th><th>Item</th><th>Status</th><th>Total</th><th class="text-center">Aksi</th></tr>
                         </thead>
                         <tbody id="historyList"></tbody>
                     </table>
                 </div>
-            </div></div>
+            </div>
         </div>
 
         <div class="tab-pane fade" id="inventory">
             <div class="card"><div class="card-body p-4">
-                <h5 class="fw-bold mb-4 text-success">Manajemen Filamen</h5>
+                <h5 class="fw-bold mb-4">Master Filamen</h5>
                 <div class="row g-2 mb-4 bg-light p-3 rounded-4">
-                    <div class="col-md-6"><input id="matName" class="form-control" placeholder="Nama Filamen (PLA Black)"></div>
-                    <div class="col-md-4"><input id="matPrice" type="number" class="form-control" placeholder="Harga per Kg"></div>
-                    <div class="col-md-2"><button id="btnSaveMat" class="btn btn-primary-studio w-100 text-white" onclick="saveMaterial()">Simpan</button></div>
+                    <div class="col-md-6"><input id="matName" class="form-control" placeholder="Nama Filamen"></div>
+                    <div class="col-md-4"><input id="matPrice" type="number" class="form-control" placeholder="Harga / Kg"></div>
+                    <div class="col-md-2"><button id="btnSaveMat" class="btn btn-primary-studio w-100" onclick="saveMaterial()">Tambah</button></div>
                 </div>
                 <div class="list-group list-group-flush" id="materialList"></div>
             </div></div>
@@ -397,530 +293,227 @@ body.dark .bg-light { background-color: var(--bg-dark) !important; color: var(--
 
         <div class="tab-pane fade" id="setup">
             <div class="card"><div class="card-body p-4">
-                <h5 class="fw-bold mb-4 text-success">Biaya Operasional (Cost per Hour)</h5>
+                <h5 class="fw-bold mb-4">Biaya Operasional</h5>
                 <div class="row g-3">
                     <div class="col-md-4"><label class="form-label">Depresiasi Mesin/jam</label><input id="depr" class="form-control" type="number" value="2100"></div>
                     <div class="col-md-4"><label class="form-label">Jasa Operator/jam</label><input id="operator" class="form-control" type="number" value="2000"></div>
-                    <div class="col-md-4"><label class="form-label">Konsumsi Mesin (Watt)</label><input id="watt" class="form-control" type="number" value="100"></div>
-                    <div class="col-md-6"><label class="form-label">Tarif Listrik (per kWh)</label><input id="kwh" class="form-control" type="number" value="1500"></div>
+                    <div class="col-md-4"><label class="form-label">Watt Mesin</label><input id="watt" class="form-control" type="number" value="100"></div>
+                    <div class="col-md-6"><label class="form-label">Tarif Listrik (kWh)</label><input id="kwh" class="form-control" type="number" value="1500"></div>
                     <div class="col-md-6"><label class="form-label">Maintenance/jam</label><input id="maint" class="form-control" type="number" value="750"></div>
                 </div>
-                <div class="mt-4 pt-3 border-top d-flex justify-content-between align-items-center">
-                    <button class="btn btn-outline-warning btn-sm fw-bold" onclick="resetInvCounter()">Reset Penomoran Invoice</button>
-                    <span class="text-muted small">Simpang Studio Engine v3.7 Pro + Analytics</span>
-                </div>
+                <div class="mt-4 border-top pt-3"><button class="btn btn-outline-warning btn-sm" onclick="resetInvCounter()">Reset No. Invoice</button></div>
             </div></div>
         </div>
     </div>
 </div>
 
 <script>
-const rp = n => 'Rp ' + (Math.round(n) || 0).toLocaleString('id-ID');
-let editIndex = -1;
-let isEditMode = false; // Variabel penentu apakah kita mengedit data lama atau input baru
-let lastCalculatedData = {};
-let performanceChart = null;
+    const rp = n => 'Rp ' + (Math.round(n) || 0).toLocaleString('id-ID');
+    let isEditMode = false;
+    let performanceChart = null;
+    let lastCalculatedData = {};
 
-function getMaterials(){ return JSON.parse(localStorage.getItem('materials') || '[]'); }
-function setMaterials(d){ localStorage.setItem('materials', JSON.stringify(d)); }
-function getHistory(){ return JSON.parse(localStorage.getItem('order_history') || '[]'); }
+    function getMaterials(){ return JSON.parse(localStorage.getItem('materials') || '[]'); }
+    function getHistory(){ return JSON.parse(localStorage.getItem('order_history') || '[]'); }
 
-function showNotification() {
-    const toast = document.getElementById('studio-toast');
-    toast.style.display = 'block';
-    setTimeout(() => { toast.style.display = 'none'; }, 3000);
-}
-
-function renderInventory(){
-  const list = document.getElementById('materialList'); list.innerHTML = '';
-  getMaterials().forEach((m, i) => {
-    list.innerHTML += `
-      <div class="list-group-item d-flex justify-content-between align-items-center py-3 border-0 border-bottom bg-transparent">
-        <div>
-            <span class="fw-bold d-block">${m.name}</span>
-            <span class="text-success small fw-bold">${rp(m.price)} / Kg</span>
-        </div>
-        <div>
-            <button class="btn-action btn-edit me-1" onclick="editMaterial(${i})">Edit</button>
-            <button class="btn-action btn-del" onclick="deleteMaterial(${i})">Hapus</button>
-        </div>
-      </div>`;
-  });
-  loadMaterialSelect();
-}
-
-function saveMaterial(){
-  const name = matName.value.trim(), price = Number(matPrice.value);
-  if(!name || price <= 0) return alert('Data tidak valid!');
-  const d = getMaterials();
-  if(editIndex === -1) d.push({name, price}); else { d[editIndex] = {name, price}; editIndex = -1; btnSaveMat.innerText = 'Tambah'; }
-  setMaterials(d); renderInventory(); matName.value = ''; matPrice.value = '';
-}
-
-function editMaterial(i){
-    const item = getMaterials()[i]; matName.value = item.name; matPrice.value = item.price; 
-    editIndex = i; btnSaveMat.innerText = 'Update'; matName.focus();
-}
-
-function deleteMaterial(i){ if(confirm('Hapus material?')){ const d = getMaterials(); d.splice(i,1); setMaterials(d); renderInventory(); } }
-
-function loadMaterialSelect(){
-  materialSelect.innerHTML = '';
-  const mats = getMaterials();
-  if(mats.length === 0) {
-      materialSelect.innerHTML = `<option value="0">-- Tambah Material di Tab Stok --</option>`;
-  } else {
-      mats.forEach(m => { materialSelect.innerHTML += `<option value="${m.price}">${m.name}</option>`; });
-  }
-  updatePriceGram();
-}
-
-function updatePriceGram(){ if(materialSelect.value) priceGram.value = rp(materialSelect.value / 1000); }
-materialSelect.addEventListener('change', updatePriceGram);
-
-function generateInvoiceNum(){
-  const y = new Date().getFullYear();
-  let lastNum = parseInt(localStorage.getItem('inv_counter') || 1);
-  const inv = `INV-${y}-${String(lastNum).padStart(4, '0')}`;
-  document.getElementById('invDisplay').innerText = inv;
-  return inv;
-}
-
-// FUNGSI BARU UNTUK MEMASTIKAN PESANAN BARU TIDAK MENIMPA DATA LAMA
-function calculateAndSave() {
-    // Jika tidak dalam mode edit (isEditMode = false), maka buat nomor invoice baru
-    if (!isEditMode) {
-        generateInvoiceNum();
+    function showNotification() {
+        const t = document.getElementById('studio-toast');
+        t.style.display = 'block';
+        setTimeout(() => t.style.display = 'none', 3000);
     }
-    
-    // Jalankan kalkulasi utama
-    calculate(false);
-    
-    // Beri notifikasi
-    showNotification();
-    
-    // Setelah simpan, jika sebelumnya Edit Mode, kembalikan ke New Mode agar tombol Hitung selanjutnya membuat data baru
-    if (isEditMode) {
+
+    function updatePriceGram(){ 
+        const s = document.getElementById('materialSelect');
+        document.getElementById('priceGram').value = s.value ? rp(s.value/1000) : 'Rp 0';
+    }
+
+    function generateInvoiceNum(){
+        const y = new Date().getFullYear();
+        let num = parseInt(localStorage.getItem('inv_counter') || 1);
+        const inv = `INV-${y}-${String(num).padStart(4, '0')}`;
+        document.getElementById('invDisplay').innerText = inv;
+        return inv;
+    }
+
+    function calculateAndSave() {
+        if(!isEditMode) generateInvoiceNum();
+        calculate(false);
+        showNotification();
         isEditMode = false;
-        // Opsional: generate nomer baru untuk persiapan input selanjutnya
-        generateInvoiceNum();
     }
-}
 
-function calculate(isLoading = false){
-  const [h, m] = time.value.split(':').map(Number);
-  const hours = h + (m/60);
-  const s = JSON.parse(localStorage.getItem('setup_3d') || '{}');
-  
-  const totalWeight = (+weight.value||0) + (+support.value||0) + (+waste.value||0);
-  const matCost = totalWeight * ((materialSelect.value||0) / 1000);
-  const electric = ((s.watt||0) / 1000) * hours * (s.kwh||0);
-  const opCost = (hours * ((s.depr||0) + (s.operator||0) + (s.maint||0))) + electric;
-  
-  const hpp = matCost + opCost;
-  const subtotal = hpp + (hpp * (+profit.value||0) / 100) + (hpp * (+risk.value||0) / 100);
+    function calculate(isLoading = false){
+        const [h, m] = document.getElementById('time').value.split(':').map(Number);
+        const hrs = h + (m/60);
+        const s = JSON.parse(localStorage.getItem('setup_3d') || '{"depr":2100,"operator":2000,"watt":100,"kwh":1500,"maint":750}');
+        
+        const totalW = (+document.getElementById('weight').value||0) + (+document.getElementById('support').value||0) + (+document.getElementById('waste').value||0);
+        const matCost = totalW * ((document.getElementById('materialSelect').value||0)/1000);
+        const electricity = (s.watt/1000) * hrs * s.kwh;
+        const opCost = (hrs * (s.depr + s.operator + s.maint)) + electricity;
+        
+        const hpp = matCost + opCost;
+        const sub = hpp + (hpp * (+document.getElementById('profit').value/100)) + (hpp * (+document.getElementById('risk').value/100));
+        const disc = sub * (+document.getElementById('discount').value/100);
+        const tax = (sub - disc) * (+document.getElementById('taxActive').value/100);
+        const grand = (sub - disc) + tax;
 
-  const discPercent = +discount.value || 0;
-  const discAmount = subtotal * (discPercent / 100);
-  const afterDisc = subtotal - discAmount;
-  const taxPercent = +taxActive.value || 0;
-  const taxAmount = afterDisc * (taxPercent / 100);
-  const grandTotal = afterDisc + taxAmount;
-  const netProfit = grandTotal - hpp - taxAmount;
+        document.getElementById('total').innerText = rp(grand);
+        document.getElementById('breakdown').innerHTML = `HPP: ${rp(hpp)} | Pajak: ${rp(tax)}`;
 
-  document.getElementById('total').innerText = rp(grandTotal);
-  document.getElementById('breakdown').innerHTML = `HPP: ${rp(hpp)} | Pajak: ${rp(taxAmount)}`;
+        const inv = document.getElementById('invDisplay').innerText;
+        lastCalculatedData = { inv, total: grand, subtotal: sub, discAmount: disc, taxAmount: tax, status: document.getElementById('paymentStatus').value };
 
-  const currentInv = document.getElementById('invDisplay').innerText === '-' ? generateInvoiceNum() : document.getElementById('invDisplay').innerText;
+        const history = getHistory();
+        const entry = {
+            inv, cust: document.getElementById('customer').value, item: document.getElementById('itemName').value,
+            total: grand, hpp, netProfit: grand - hpp - tax, status: lastCalculatedData.status,
+            details: { weight: document.getElementById('weight').value, time: document.getElementById('time').value, matName: document.getElementById('materialSelect').options[document.getElementById('materialSelect').selectedIndex]?.text, profit: profit.value, risk: risk.value, tax: taxActive.value, discount: discount.value }
+        };
 
-  lastCalculatedData = {
-      inv: currentInv, 
-      subtotal: subtotal,
-      discAmount: discAmount,
-      taxAmount: taxAmount,
-      total: grandTotal,
-      hpp: hpp,
-      netProfit: netProfit,
-      status: paymentStatus.value
-  };
-
-  saveToHistory({
-      inv: currentInv, cust: customer.value, item: itemName.value, total: grandTotal, status: paymentStatus.value,
-      hpp: hpp, netProfit: netProfit,
-      details: { 
-          weight: weight.value, time: time.value, support: support.value, waste: waste.value, 
-          profit: profit.value, risk: risk.value, discount: discPercent, tax: taxPercent,
-          matName: materialSelect.options[materialSelect.selectedIndex]?.text 
-      }
-  });
-
-  if(!isLoading && currentInv.includes(localStorage.getItem('inv_counter') || '1')){
-      localStorage.setItem('inv_counter', parseInt(localStorage.getItem('inv_counter') || 1) + 1);
-  }
-}
-
-function initChart(labels, profitData, hppData) {
-    const ctx = document.getElementById('performanceChart').getContext('2d');
-    if (performanceChart) performanceChart.destroy();
-
-    const isDark = document.body.classList.contains('dark');
-    const textColor = isDark ? '#94a3b8' : '#64748b';
-
-    performanceChart = new Chart(ctx, {
-        type: 'bar',
-        data: {
-            labels: labels,
-            datasets: [
-                {
-                    label: 'Profit Bersih',
-                    data: profitData,
-                    backgroundColor: '#10b981',
-                    borderRadius: 5,
-                },
-                {
-                    label: 'Modal (HPP)',
-                    data: hppData,
-                    backgroundColor: '#3b82f6',
-                    borderRadius: 5,
-                }
-            ]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            scales: {
-                x: { stacked: true, ticks: { color: textColor }, grid: { display: false } },
-                y: { stacked: true, ticks: { color: textColor, callback: value => 'Rp ' + value.toLocaleString() }, grid: { color: isDark ? '#334155' : '#e2e8f0' } }
-            },
-            plugins: {
-                legend: { position: 'top', labels: { color: textColor, font: { weight: 'bold' } } },
-                tooltip: { callbacks: { label: context => context.dataset.label + ': ' + rp(context.raw) } }
-            }
+        const idx = history.findIndex(x => x.inv === inv);
+        if(idx > -1) history[idx] = entry; else history.unshift(entry);
+        localStorage.setItem('order_history', JSON.stringify(history));
+        
+        if(!isLoading && inv.includes(localStorage.getItem('inv_counter') || '1')) {
+            localStorage.setItem('inv_counter', parseInt(localStorage.getItem('inv_counter')||1)+1);
         }
-    });
-}
+        renderHistory();
+    }
 
-function saveToHistory(o){
-    const h = getHistory(); const idx = h.findIndex(x => x.inv === o.inv);
-    if(idx > -1) h[idx] = o; else h.unshift(o);
-    localStorage.setItem('order_history', JSON.stringify(h)); renderHistory();
-}
+    function initChart(labels, profitData, hppData) {
+        const ctx = document.getElementById('performanceChart').getContext('2d');
+        if(performanceChart) performanceChart.destroy();
+        performanceChart = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels,
+                datasets: [
+                    { label: 'Profit', data: profitData, backgroundColor: '#10b981', borderRadius: 5 },
+                    { label: 'HPP', data: hppData, backgroundColor: '#cbd5e1', borderRadius: 5 }
+                ]
+            },
+            options: { responsive: true, maintainAspectRatio: false, scales: { x: { stacked: true }, y: { stacked: true } } }
+        });
+    }
 
-function renderHistory(){
-    const list = document.getElementById('historyList'); 
-    const searchTerm = document.getElementById('historySearch').value.toLowerCase();
-    list.innerHTML = '';
-    
-    let totalRevenue = 0;
-    let totalProfit = 0;
-    const historyData = getHistory();
+    function renderHistory(){
+        const list = document.getElementById('historyList');
+        const search = document.getElementById('historySearch').value.toLowerCase();
+        list.innerHTML = '';
+        let rev = 0, prof = 0;
+        const history = getHistory();
+        const cLabels = [], cProf = [], cHpp = [];
 
-    const chartLabels = [];
-    const chartProfit = [];
-    const chartHPP = [];
+        history.slice(0, 7).reverse().forEach(x => {
+            cLabels.push(x.inv.split('-').pop());
+            cProf.push(x.netProfit);
+            cHpp.push(x.hpp);
+        });
 
-    historyData.slice(0, 7).reverse().forEach(item => {
-        chartLabels.push(item.inv.split('-').pop()); 
-        chartProfit.push(item.netProfit || 0);
-        chartHPP.push(item.hpp || 0);
-    });
-
-    historyData.forEach((item, i) => {
-        if(item.cust.toLowerCase().includes(searchTerm) || item.item.toLowerCase().includes(searchTerm) || item.inv.toLowerCase().includes(searchTerm)) {
-            totalRevenue += item.total;
-            totalProfit += (item.netProfit || 0);
-            const badgeColor = item.status === 'LUNAS' ? 'bg-success' : 'bg-warning text-dark';
-            list.innerHTML += `
-                <tr style="cursor:pointer" onclick="loadFromHistory(${i})">
-                    <td class="ps-4 py-3"><span class="fw-bold text-success" style="font-size:0.85rem">${item.inv}</span></td>
-                    <td><span class="fw-600">${item.cust || '-'}</span></td>
-                    <td><span class="badge-custom">${item.item || '-'}</span></td>
-                    <td><span class="badge ${badgeColor}" style="font-size:0.65rem; padding: 5px 8px;">${item.status || 'BELUM LUNAS'}</span></td>
-                    <td><span class="fw-800">${rp(item.total)}</span></td>
-                    <td class="text-center pe-4" onclick="event.stopPropagation()">
-                        <button class="btn-action btn-edit me-1" onclick="loadFromHistory(${i})">Buka</button>
-                        <button class="btn-action btn-del" onclick="deleteHistory(${i})">Hapus</button>
+        history.forEach((x, i) => {
+            if(x.cust.toLowerCase().includes(search) || x.inv.toLowerCase().includes(search)){
+                rev += x.total; prof += x.netProfit;
+                list.innerHTML += `<tr>
+                    <td class="ps-4 fw-bold text-success">${x.inv}</td>
+                    <td>${x.cust}</td>
+                    <td><span class="badge-custom">${x.item}</span></td>
+                    <td><span class="badge ${x.status==='LUNAS'?'bg-success':'bg-warning text-dark'}">${x.status}</span></td>
+                    <td class="fw-bold">${rp(x.total)}</td>
+                    <td class="text-center">
+                        <button class="btn-action btn-edit" onclick="loadFromHistory(${i})">Buka</button>
                     </td>
                 </tr>`;
-        }
-    });
-
-    document.getElementById('statRevenue').innerText = rp(totalRevenue);
-    document.getElementById('statProfit').innerText = rp(totalProfit);
-    document.getElementById('statOrders').innerText = historyData.length;
-
-    initChart(chartLabels, chartProfit, chartHPP);
-}
-
-function loadFromHistory(i){
-    const item = getHistory()[i];
-    if(!item) return;
-    isEditMode = true; // Masuk ke mode edit
-    customer.value = item.cust; itemName.value = item.item || ''; 
-    document.getElementById('invDisplay').innerText = item.inv;
-    weight.value = item.details.weight; time.value = item.details.time;
-    support.value = item.details.support; waste.value = item.details.waste;
-    profit.value = item.details.profit; risk.value = item.details.risk;
-    discount.value = item.details.discount || 0;
-    taxActive.value = item.details.tax || 0;
-    paymentStatus.value = item.status || 'BELUM LUNAS';
-    
-    for(let opt of materialSelect.options) {
-        if(opt.text === item.details.matName) {
-            materialSelect.value = opt.value;
-            break;
-        }
-    }
-    document.querySelector('[data-bs-target="#calc"]').click(); 
-    calculate(true);
-}
-
-function clearHistory(){ if(confirm('Hapus semua riwayat?')){ localStorage.removeItem('order_history'); renderHistory(); } }
-function deleteHistory(i){ if(confirm('Hapus pesanan ini?')){ const h = getHistory(); h.splice(i,1); localStorage.setItem('order_history', JSON.stringify(h)); renderHistory(); } }
-function resetInvCounter(){ if(confirm('Reset nomor invoice ke 0001?')){ localStorage.setItem('inv_counter', 1); generateInvoiceNum(); } }
-
-function exportPDF(){
-  const { jsPDF } = window.jspdf;
-  const doc = new jsPDF('p', 'mm', 'a4');
-  const primaryColor = [16, 185, 129]; 
-  const darkSlate = [30, 41, 59];
-  const lightGray = [241, 245, 249];
-  const data = lastCalculatedData;
-
-  if(!data.inv) return alert("Silahkan Hitung & Simpan data terlebih dahulu!");
-
-  doc.setFillColor(primaryColor[0], primaryColor[1], primaryColor[2]);
-  doc.rect(0, 0, 210, 45, 'F');
-  doc.setTextColor(255, 255, 255);
-  doc.setFont("helvetica", "bold");
-  doc.setFontSize(26);
-  doc.text("SIMPANG", 15, 22);
-  doc.setFont("helvetica", "normal");
-  doc.text("STUDIO.", 63, 22);
-  doc.setFontSize(9);
-  doc.text("Professional 3D Model & Printing Solution", 15, 29);
-  doc.setFontSize(14);
-  doc.text("INVOICE", 160, 20);
-  doc.setFontSize(10);
-  doc.text(data.inv, 160, 26);
-
-  doc.setTextColor(darkSlate[0], darkSlate[1], darkSlate[2]);
-  doc.setFontSize(8); doc.setFont("helvetica", "bold");
-  doc.text("DITAGIHKAN KEPADA:", 15, 60);
-  doc.setFont("helvetica", "normal"); doc.setFontSize(11);
-  doc.text(customer.value || "Pelanggan Umum", 15, 67);
-
-  doc.setFontSize(8); doc.setFont("helvetica", "bold");
-  doc.text("TANGGAL TERBIT:", 160, 60);
-  doc.setFont("helvetica", "normal"); doc.setFontSize(10);
-  doc.text(new Date().toLocaleDateString('id-ID'), 160, 67);
-
-  doc.setFillColor(lightGray[0], lightGray[1], lightGray[2]);
-  doc.rect(15, 78, 180, 10, 'F');
-  doc.setFont("helvetica", "bold"); doc.setFontSize(9);
-  doc.text("DESKRIPSI PESANAN", 20, 84.5);
-  doc.text("TOTAL", 160, 84.5);
-
-  doc.setFontSize(10);
-  doc.text(itemName.value || "Custom 3D Printing Object", 20, 98);
-  doc.setFont("helvetica", "normal"); doc.setFontSize(8); doc.setTextColor(100);
-  const mat = materialSelect.options[materialSelect.selectedIndex]?.text || "-";
-  doc.text(`Material: ${mat}`, 20, 104);
-  doc.text(`Spesifikasi: ${(+weight.value)+(+support.value)+(+waste.value)}g | ${time.value} jam pengerjaan`, 20, 109);
-  doc.setTextColor(darkSlate[0], darkSlate[1], darkSlate[2]);
-  doc.text(rp(data.subtotal), 160, 98);
-
-  let yPos = 125;
-  doc.setDrawColor(230); doc.line(15, yPos, 195, yPos);
-  yPos += 8; doc.setFontSize(9);
-  doc.text("Subtotal:", 130, yPos);
-  doc.text(rp(data.subtotal), 190, yPos, {align: 'right'});
-
-  if(data.discAmount > 0) {
-      yPos += 6; doc.setTextColor(220, 38, 38);
-      doc.text(`Diskon (${discount.value}%):`, 130, yPos);
-      doc.text(`-${rp(data.discAmount)}`, 190, yPos, {align: 'right'});
-  }
-
-  if(data.taxAmount > 0) {
-      yPos += 6; doc.setTextColor(primaryColor[0], primaryColor[1], primaryColor[2]);
-      doc.text(`PPN (${taxActive.value}%):`, 130, yPos);
-      doc.text(rp(data.taxAmount), 190, yPos, {align: 'right'});
-  }
-
-  yPos += 8;
-  doc.setFillColor(primaryColor[0], primaryColor[1], primaryColor[2]);
-  doc.rect(125, yPos - 5, 70, 12, 'F');
-  doc.setTextColor(255); doc.setFont("helvetica", "bold"); doc.setFontSize(11);
-  doc.text("TOTAL AKHIR:", 130, yPos + 2.5);
-  doc.text(rp(data.total), 190, yPos + 2.5, {align: 'right'});
-
-  yPos = 210;
-  doc.setTextColor(darkSlate[0], darkSlate[1], darkSlate[2]); doc.setFontSize(9);
-  doc.text("SYARAT & KETENTUAN:", 15, yPos);
-  doc.setDrawColor(primaryColor[0], primaryColor[1], primaryColor[2]); doc.line(15, yPos + 2, 50, yPos + 2);
-
-  doc.setFont("helvetica", "normal"); doc.setFontSize(8); doc.setTextColor(100);
-  const terms = ["1. Barang sudah dicetak sesuai file tidak dapat dibatalkan.", "2. Estimasi waktu tergantung antrian.", "3. Simpang Studio tidak bertanggung jawab atas kesalahan desain dari customer.", "4. Terima kasih telah mempercayakan proyek 3D anda kepada Simpang Studio"];
-  terms.forEach((t, i) => doc.text(t, 15, yPos + 8 + (i * 4)));
-
-  doc.saveGraphicsState();
-  doc.setGState(new doc.GState({opacity: 0.1}));
-  doc.setFontSize(70);
-  doc.setTextColor(data.status === 'LUNAS' ? 16 : 220, data.status === 'LUNAS' ? 185 : 38, data.status === 'LUNAS' ? 129 : 38);
-  doc.text(data.status === 'LUNAS' ? "PAID" : "UNPAID", 120, 140, {align:'center', angle:45});
-  doc.restoreGraphicsState();
-
-  doc.save(`${data.inv}_${customer.value || 'Client'}.pdf`);
-}
-
-    function toggleDark(){ 
-    document.body.classList.toggle('dark');
-    const btn = document.getElementById('themeBtn');
-    btn.innerText = document.body.classList.contains('dark') ? '☀️ Mode Terang' : '🌙 Mode Gelap';
-    renderHistory(); 
-}
-
-document.addEventListener('DOMContentLoaded', () => {
-    const s = JSON.parse(localStorage.getItem('setup_3d') || '{"depr":2100,"operator":2000,"watt":100,"kwh":1500,"maint":750}');
-    ['depr','operator','watt','kwh','maint'].forEach(id => {
-        const el = document.getElementById(id);
-        if(el) {
-            el.value = s[id];
-            el.addEventListener('input', () => {
-                const currentData = {};
-                ['depr','operator','watt','kwh','maint'].forEach(k => currentData[k] = +document.getElementById(k).value);
-                localStorage.setItem('setup_3d', JSON.stringify(currentData));
-            });
-        }
-    });
-
-    const inputs = ['customer', 'itemName', 'weight', 'time', 'support', 'waste', 'profit', 'risk', 'discount'];
-    inputs.forEach(id => {
-        const el = document.getElementById(id);
-        if(el) {
-            if(sessionStorage.getItem('form_'+id)) el.value = sessionStorage.getItem('form_'+id);
-            el.addEventListener('input', () => sessionStorage.setItem('form_'+id, el.value));
-        }
-    });
-
-    renderInventory(); 
-    renderHistory(); 
-    generateInvoiceNum();
-});
-    
-</script> 
-<script type="module">
-  import { initializeApp, getApps, getApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-  import { getFirestore, doc, setDoc, collection, onSnapshot, deleteDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
-
-  const firebaseConfig = {
-    apiKey: "AIzaSyD3pKjssC6NRKXDfhHsr65al9maZto2IgQ",
-    authDomain: "simpang-studio.firebaseapp.com",
-    projectId: "simpang-studio",
-    storageBucket: "simpang-studio.firebasestorage.app",
-    messagingSenderId: "776018160572",
-    appId: "1:776018160572:web:e6d11f9bb1db79173959b9",
-    measurementId: "G-R5N8MMM8HZ"
-  };
-
-  const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
-  const db = getFirestore(app);
-
-  // --- 1. SINKRONISASI REAL-TIME (DARI CLOUD KE UI) ---
-  function initRealtimeSync() {
-    // Sinkronisasi Riwayat
-    onSnapshot(collection(db, "orders"), (snapshot) => {
-      const orders = [];
-      snapshot.forEach(doc => orders.push(doc.data()));
-      orders.sort((a, b) => b.inv.localeCompare(a.inv));
-      localStorage.setItem('order_history', JSON.stringify(orders));
-      if (typeof renderHistory === 'function') renderHistory();
-    });
-
-    // Sinkronisasi Material
-    onSnapshot(collection(db, "materials"), (snapshot) => {
-      const materials = [];
-      snapshot.forEach(doc => materials.push({ id: doc.id, ...doc.data() }));
-      localStorage.setItem('materials', JSON.stringify(materials));
-      if (typeof renderInventory === 'function') renderInventory();
-    });
-
-    // Sinkronisasi Setup
-    onSnapshot(doc(db, "settings", "config"), (docSnap) => {
-      if (docSnap.exists()) {
-        const setupData = docSnap.data();
-        localStorage.setItem('setup_3d', JSON.stringify(setupData));
-        // Update input UI
-        Object.keys(setupData).forEach(key => {
-          const el = document.getElementById(key);
-          if (el) el.value = setupData[key];
+            }
         });
-      }
-    });
-  }
-
-  // --- 2. FUNGSI PENGIRIMAN DATA KE CLOUD ---
-
-  // Simpan Material (Overriding fungsi saveMaterial lama)
-  window.saveMaterial = async () => {
-    const name = document.getElementById('matName').value.trim();
-    const price = Number(document.getElementById('matPrice').value);
-    if (!name || price <= 0) return alert('Data tidak valid!');
-
-    try {
-      // Gunakan Nama sebagai ID dokumen agar tidak duplikat
-      await setDoc(doc(db, "materials", name), { name, price });
-      document.getElementById('matName').value = '';
-      document.getElementById('matPrice').value = '';
-      showNotification();
-    } catch (e) { console.error("Gagal simpan material:", e); }
-  };
-
-  // Hapus Material (Overriding fungsi deleteMaterial lama)
-  window.deleteMaterial = async (index) => {
-    if(confirm('Hapus material?')){
-      const m = JSON.parse(localStorage.getItem('materials'))[index];
-      await deleteDoc(doc(db, "materials", m.name));
+        document.getElementById('statRevenue').innerText = rp(rev);
+        document.getElementById('statProfit').innerText = rp(prof);
+        initChart(cLabels, cProf, cHpp);
     }
-  };
 
-  // Simpan Setup Otomatis saat input berubah
-  const setupFields = ['depr', 'operator', 'watt', 'kwh', 'maint'];
-  setupFields.forEach(id => {
-    document.getElementById(id)?.addEventListener('change', async () => {
-      const currentSetup = JSON.parse(localStorage.getItem('setup_3d') || '{}');
-      try {
-        await setDoc(doc(db, "settings", "config"), currentSetup);
-        console.log("Setup Cloud Updated");
-      } catch (e) { console.error("Gagal update setup:", e); }
+    function loadFromHistory(i){
+        const x = getHistory()[i];
+        isEditMode = true;
+        document.getElementById('customer').value = x.cust;
+        document.getElementById('itemName').value = x.item;
+        document.getElementById('invDisplay').innerText = x.inv;
+        document.getElementById('weight').value = x.details.weight;
+        document.getElementById('time').value = x.details.time;
+        document.getElementById('profit').value = x.details.profit;
+        document.getElementById('paymentStatus').value = x.status;
+        document.querySelector('[data-bs-target="#calc"]').click();
+        calculate(true);
+    }
+
+    function renderInventory(){
+        const list = document.getElementById('materialList');
+        const sel = document.getElementById('materialSelect');
+        list.innerHTML = ''; sel.innerHTML = '';
+        getMaterials().forEach((m, i) => {
+            list.innerHTML += `<div class="list-group-item d-flex justify-content-between">
+                <span><b>${m.name}</b> - ${rp(m.price)}</span>
+                <button class="btn-action btn-del" onclick="deleteMaterial(${i})">Hapus</button>
+            </div>`;
+            sel.innerHTML += `<option value="${m.price}">${m.name}</option>`;
+        });
+        updatePriceGram();
+    }
+
+    function deleteMaterial(i){ const m = getMaterials(); m.splice(i,1); localStorage.setItem('materials', JSON.stringify(m)); renderInventory(); }
+    function resetInvCounter(){ localStorage.setItem('inv_counter', 1); generateInvoiceNum(); }
+
+    function exportPDF(){
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF();
+        doc.text("INVOICE SIMPANG STUDIO", 10, 10);
+        doc.text(`Invoice: ${lastCalculatedData.inv}`, 10, 20);
+        doc.text(`Pelanggan: ${document.getElementById('customer').value}`, 10, 30);
+        doc.text(`Total: ${rp(lastCalculatedData.total)}`, 10, 40);
+        doc.save(`${lastCalculatedData.inv}.pdf`);
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+        renderInventory(); renderHistory(); generateInvoiceNum();
+        document.getElementById('materialSelect').addEventListener('change', updatePriceGram);
     });
-  });
+</script>
 
-  // --- 3. LOGIKA TOMBOL SIMPAN KALKULATOR ---
-  document.addEventListener('click', async (event) => {
-    if (event.target.innerText.toUpperCase().includes('HITUNG & SIMPAN')) {
-      // Beri jeda sebentar agar kalkulasi local selesai
-      setTimeout(async () => {
-        const history = JSON.parse(localStorage.getItem('order_history') || '[]');
-        if (history.length > 0) {
-          const dataTerbaru = history[0]; 
-          try {
-            await setDoc(doc(db, "orders", dataTerbaru.inv), {
-              ...dataTerbaru,
-              last_sync: new Date().toISOString()
-            });
-          } catch (e) { console.error("Gagal simpan order:", e); }
+<script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+    import { getFirestore, doc, setDoc, collection, onSnapshot } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+    const firebaseConfig = {
+        apiKey: "AIzaSyD3pKjssC6NRKXDfhHsr65al9maZto2IgQ",
+        authDomain: "simpang-studio.firebaseapp.com",
+        projectId: "simpang-studio",
+        storageBucket: "simpang-studio.firebasestorage.app",
+        messagingSenderId: "776018160572",
+        appId: "1:776018160572:web:e6d11f9bb1db79173959b9"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+
+    window.saveMaterial = async () => {
+        const name = document.getElementById('matName').value;
+        const price = Number(document.getElementById('matPrice').value);
+        if(name && price) {
+            await setDoc(doc(db, "materials", name), { name, price });
+            const m = getMaterials(); m.push({name, price});
+            localStorage.setItem('materials', JSON.stringify(m));
+            renderInventory();
         }
-      }, 500);
-    }
-  });
+    };
 
-  // Jalankan sync saat aplikasi dibuka
-  window.addEventListener('load', initRealtimeSync);
+    onSnapshot(collection(db, "materials"), (snap) => {
+        const m = []; snap.forEach(d => m.push(d.data()));
+        localStorage.setItem('materials', JSON.stringify(m));
+        renderInventory();
+    });
 </script>
 </body>
 </html>
+
 
 
 
