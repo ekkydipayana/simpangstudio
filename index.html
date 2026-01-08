@@ -794,7 +794,7 @@ document.addEventListener('DOMContentLoaded', () => {
 </script> 
 <script type="module">
   import { initializeApp, getApps, getApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-  import { getFirestore, doc, setDoc, collection, getDocs } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+  import { getFirestore, doc, setDoc, collection, onSnapshot, deleteDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
   const firebaseConfig = {
     apiKey: "AIzaSyD3pKjssC6NRKXDfhHsr65al9maZto2IgQ",
@@ -809,31 +809,80 @@ document.addEventListener('DOMContentLoaded', () => {
   const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
   const db = getFirestore(app);
 
-  async function syncFromCloud() {
-    try {
-      console.log("Menghubungkan ke Cloud Simpang Studio...");
-      const querySnapshot = await getDocs(collection(db, "orders"));
-      const cloudData = [];
-      querySnapshot.forEach((doc) => cloudData.push(doc.data()));
+  // --- 1. SINKRONISASI REAL-TIME (DARI CLOUD KE UI) ---
+  function initRealtimeSync() {
+    // Sinkronisasi Riwayat
+    onSnapshot(collection(db, "orders"), (snapshot) => {
+      const orders = [];
+      snapshot.forEach(doc => orders.push(doc.data()));
+      orders.sort((a, b) => b.inv.localeCompare(a.inv));
+      localStorage.setItem('order_history', JSON.stringify(orders));
+      if (typeof renderHistory === 'function') renderHistory();
+    });
 
-      if (cloudData.length > 0) {
-        cloudData.sort((a, b) => b.inv.localeCompare(a.inv));
-        localStorage.setItem('order_history', JSON.stringify(cloudData));
-        
-        if (typeof renderHistory === 'function') {
-          renderHistory();
-        }
-        console.log("✓ Berhasil sinkronisasi dengan Cloud.");
+    // Sinkronisasi Material
+    onSnapshot(collection(db, "materials"), (snapshot) => {
+      const materials = [];
+      snapshot.forEach(doc => materials.push({ id: doc.id, ...doc.data() }));
+      localStorage.setItem('materials', JSON.stringify(materials));
+      if (typeof renderInventory === 'function') renderInventory();
+    });
+
+    // Sinkronisasi Setup
+    onSnapshot(doc(db, "settings", "config"), (docSnap) => {
+      if (docSnap.exists()) {
+        const setupData = docSnap.data();
+        localStorage.setItem('setup_3d', JSON.stringify(setupData));
+        // Update input UI
+        Object.keys(setupData).forEach(key => {
+          const el = document.getElementById(key);
+          if (el) el.value = setupData[key];
+        });
       }
-    } catch (e) {
-      console.error("Gagal sinkronisasi Cloud:", e);
-    }
+    });
   }
 
-  window.addEventListener('load', syncFromCloud);
+  // --- 2. FUNGSI PENGIRIMAN DATA KE CLOUD ---
 
-  document.addEventListener('click', function (event) {
-    if (event.target.innerText.toUpperCase().includes('SIMPAN')) {
+  // Simpan Material (Overriding fungsi saveMaterial lama)
+  window.saveMaterial = async () => {
+    const name = document.getElementById('matName').value.trim();
+    const price = Number(document.getElementById('matPrice').value);
+    if (!name || price <= 0) return alert('Data tidak valid!');
+
+    try {
+      // Gunakan Nama sebagai ID dokumen agar tidak duplikat
+      await setDoc(doc(db, "materials", name), { name, price });
+      document.getElementById('matName').value = '';
+      document.getElementById('matPrice').value = '';
+      showNotification();
+    } catch (e) { console.error("Gagal simpan material:", e); }
+  };
+
+  // Hapus Material (Overriding fungsi deleteMaterial lama)
+  window.deleteMaterial = async (index) => {
+    if(confirm('Hapus material?')){
+      const m = JSON.parse(localStorage.getItem('materials'))[index];
+      await deleteDoc(doc(db, "materials", m.name));
+    }
+  };
+
+  // Simpan Setup Otomatis saat input berubah
+  const setupFields = ['depr', 'operator', 'watt', 'kwh', 'maint'];
+  setupFields.forEach(id => {
+    document.getElementById(id)?.addEventListener('change', async () => {
+      const currentSetup = JSON.parse(localStorage.getItem('setup_3d') || '{}');
+      try {
+        await setDoc(doc(db, "settings", "config"), currentSetup);
+        console.log("Setup Cloud Updated");
+      } catch (e) { console.error("Gagal update setup:", e); }
+    });
+  });
+
+  // --- 3. LOGIKA TOMBOL SIMPAN KALKULATOR ---
+  document.addEventListener('click', async (event) => {
+    if (event.target.innerText.toUpperCase().includes('HITUNG & SIMPAN')) {
+      // Beri jeda sebentar agar kalkulasi local selesai
       setTimeout(async () => {
         const history = JSON.parse(localStorage.getItem('order_history') || '[]');
         if (history.length > 0) {
@@ -843,14 +892,15 @@ document.addEventListener('DOMContentLoaded', () => {
               ...dataTerbaru,
               last_sync: new Date().toISOString()
             });
-            console.log("✓ Cloud Backup Berhasil: " + dataTerbaru.inv);
-          } catch (e) {
-            console.error("Gagal Backup ke Cloud:", e);
-          }
+          } catch (e) { console.error("Gagal simpan order:", e); }
         }
-      }, 1500);
+      }, 500);
     }
   });
+
+  // Jalankan sync saat aplikasi dibuka
+  window.addEventListener('load', initRealtimeSync);
 </script>
 </body>
 </html>
+
