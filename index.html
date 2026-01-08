@@ -196,6 +196,24 @@ body.dark .bg-light { background-color: var(--bg-dark) !important; color: var(--
         <button class="btn btn-sm btn-outline-secondary border-0" onclick="toggleDark()" id="themeBtn">🌙 Mode</button> 
     </div>
 
+    <div class="modal fade" id="loginModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content border-0 shadow" style="border-radius: 16px;">
+      <div class="modal-body p-4">
+        <h5 class="fw-800 mb-3">Admin Login</h5>
+        <input type="email" id="loginEmail" class="form-control mb-2" placeholder="Email Admin">
+        <input type="password" id="loginPassword" class="form-control mb-3" placeholder="Password">
+        <button class="btn btn-primary-studio w-100 text-white" onclick="handleLogin()">Masuk</button>
+        <button class="btn btn-link w-100 btn-sm text-muted mt-2" data-bs-dismiss="modal">Batal</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="authStatus" class="text-center mb-3">
+    <button class="btn btn-sm btn-light rounded-pill px-3" data-bs-toggle="modal" data-bs-target="#loginModal" id="loginBtn">🔐 Admin Login</button>
+</div>
+
     <ul class="nav nav-pills mb-4 justify-content-center" id="mainTabs">
         <li class="nav-item"><button class="nav-link active" data-bs-toggle="tab" data-bs-target="#calc">⚡ Kalkulator</button></li>
         <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#history">📜 Riwayat</button></li>
@@ -903,6 +921,7 @@ document.addEventListener('DOMContentLoaded', () => {
 </script>
 </body>
 </html>
+
 
 
 
