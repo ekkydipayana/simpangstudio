@@ -1,7 +1,6 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
-
 <meta charset="UTF-8">
 <title>Simpang Studio | Professional 3D Suite</title>
 <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -18,23 +17,13 @@
     --primary-dark: #059669;
     --bg-light: #f8fafc;
     --card-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
-    /* Dark Mode Palette - Eye Friendly Optimization */
-    --bg-dark: #0f172a;
-    --card-dark: #1e293b;
-    --border-dark: #334155;
-    --text-dark: #f1f5f9;
-    --text-muted-dark: #94a3b8;
 }
 
 body { 
     background: var(--bg-light); 
     font-family: 'Inter', sans-serif; 
     color: #1e293b;
-    transition: background 0.3s ease, color 0.3s ease;
 }
-
-/* Updated Dark Mode - Low Strain Contrast */
-body.dark { background: var(--bg-dark); color: var(--text-dark); }
 
 .app-container { max-width: 1000px; margin: 2rem auto; }
 
@@ -47,10 +36,7 @@ body.dark { background: var(--bg-dark); color: var(--text-dark); }
     margin-bottom: 1.5rem;
 }
 
-body.dark .card { background: var(--card-dark); border: 1px solid var(--border-dark); }
-
 .nav-pills { background: #e2e8f0; padding: 6px; border-radius: 12px; }
-body.dark .nav-pills { background: var(--border-dark); }
 
 .nav-pills .nav-link { 
     color: #64748b; 
@@ -58,7 +44,6 @@ body.dark .nav-pills { background: var(--border-dark); }
     border-radius: 8px; 
     padding: 10px 20px;
 }
-body.dark .nav-pills .nav-link { color: var(--text-muted-dark); }
 
 .nav-pills .nav-link.active { background: var(--primary); color: white; box-shadow: 0 4px 6px -1px rgba(16, 185, 129, 0.4); }
 
@@ -75,21 +60,12 @@ body.dark .nav-pills .nav-link { color: var(--text-muted-dark); }
 .result-display p { opacity: 0.9; font-weight: 500; margin-bottom: 5px; }
 
 .form-label { font-weight: 600; color: #475569; font-size: 0.85rem; margin-bottom: 0.5rem; }
-body.dark .form-label { color: var(--text-muted-dark); }
 
 .form-control, .form-select {
     border-radius: 10px;
     padding: 10px 14px;
     border: 1px solid #e2e8f0;
 }
-
-body.dark .form-control, body.dark .form-select { 
-    background: var(--bg-dark); 
-    border-color: var(--border-dark); 
-    color: var(--text-dark); 
-}
-
-body.dark .form-control::placeholder { color: #4b5563; }
 
 .btn-primary-studio {
     background: var(--primary);
@@ -118,7 +94,6 @@ body.dark .form-control::placeholder { color: #4b5563; }
 .btn-del:hover { background: #ef4444; color: white; }
 
 .badge-custom { padding: 4px 10px; border-radius: 6px; font-weight: 600; background: #f1f5f9; color: #475569; font-size: 0.75rem; }
-body.dark .badge-custom { background: var(--border-dark); color: #cbd5e1; }
 
 .stat-card-new {
     padding: 1.25rem;
@@ -128,7 +103,6 @@ body.dark .badge-custom { background: var(--border-dark); color: #cbd5e1; }
     height: 100%;
     transition: transform 0.2s;
 }
-body.dark .stat-card-new { background: var(--card-dark); border-color: var(--border-dark); }
 
 .stat-icon {
     width: 40px;
@@ -152,7 +126,6 @@ body.dark .stat-card-new { background: var(--card-dark); border-color: var(--bor
     background: #f1f5f9;
     border: none;
 }
-body.dark .search-box-wrapper .form-control { background: var(--border-dark); }
 
 .table thead th {
     text-transform: uppercase;
@@ -162,8 +135,6 @@ body.dark .search-box-wrapper .form-control { background: var(--border-dark); }
     color: #64748b;
     padding: 15px;
 }
-body.dark .table thead th { color: var(--text-muted-dark); }
-body.dark .table { color: var(--text-dark); border-color: var(--border-dark); }
 
 .chart-container {
     position: relative;
@@ -171,7 +142,6 @@ body.dark .table { color: var(--text-dark); border-color: var(--border-dark); }
     width: 100%;
 }
 
-/* Toast Notification Styles */
 #studio-toast {
     position: fixed; top: 20px; right: 20px; z-index: 10000;
     padding: 15px 25px; border-radius: 12px; background: var(--primary);
@@ -180,7 +150,7 @@ body.dark .table { color: var(--text-dark); border-color: var(--border-dark); }
 }
 @keyframes slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
 
-body.dark .bg-light { background-color: var(--bg-dark) !important; color: var(--primary) !important; }
+.bg-light-custom { background-color: #f1f5f9 !important; }
 </style>
 </head>
 <body>
@@ -193,8 +163,7 @@ body.dark .bg-light { background-color: var(--bg-dark) !important; color: var(--
             <h2 class="fw-800 m-0" style="letter-spacing: -1px;">Simpang<span style="color:var(--primary)">Studio.</span></h2>
             <p class="text-muted small m-0">Professional 3D Printing Business Manager</p>
         </div>
-        <button class="btn btn-sm btn-outline-secondary border-0" onclick="toggleDark()" id="themeBtn">🌙 Mode</button> 
-    </div>
+        </div>
 
     <ul class="nav nav-pills mb-4 justify-content-center" id="mainTabs">
         <li class="nav-item"><button class="nav-link active" data-bs-toggle="tab" data-bs-target="#calc">⚡ Kalkulator</button></li>
@@ -246,7 +215,7 @@ body.dark .bg-light { background-color: var(--bg-dark) !important; color: var(--
                             </div>
                             <div class="col-md-6">
                                 <label class="form-label">Harga per Gram (Filamen)</label>
-                                <input class="form-control bg-light fw-bold" id="priceGram" readonly>
+                                <input class="form-control bg-light-custom fw-bold" id="priceGram" readonly>
                             </div>
                         </div>
                     </div></div>
@@ -368,7 +337,7 @@ body.dark .bg-light { background-color: var(--bg-dark) !important; color: var(--
         <div class="tab-pane fade" id="inventory">
             <div class="card"><div class="card-body p-4">
                 <h5 class="fw-bold mb-4 text-success">Manajemen Filamen</h5>
-                <div class="row g-2 mb-4 bg-light p-3 rounded-4">
+                <div class="row g-2 mb-4 bg-light-custom p-3 rounded-4">
                     <div class="col-md-6"><input id="matName" class="form-control" placeholder="Nama Filamen (PLA Black)"></div>
                     <div class="col-md-4"><input id="matPrice" type="number" class="form-control" placeholder="Harga per Kg"></div>
                     <div class="col-md-2"><button id="btnSaveMat" class="btn btn-primary-studio w-100 text-white" onclick="saveMaterial()">Simpan</button></div>
@@ -397,9 +366,10 @@ body.dark .bg-light { background-color: var(--bg-dark) !important; color: var(--
 </div>
 
 <script>
+// --- LOGIKA CORE ---
 const rp = n => 'Rp ' + (Math.round(n) || 0).toLocaleString('id-ID');
 let editIndex = -1;
-let isEditMode = false; // Variabel penentu apakah kita mengedit data lama atau input baru
+let isEditMode = false; 
 let lastCalculatedData = {};
 let performanceChart = null;
 
@@ -431,20 +401,21 @@ function renderInventory(){
   loadMaterialSelect();
 }
 
-function saveMaterial(){
+// Global scope agar bisa dioverride Firebase
+window.saveMaterial = function() {
   const name = matName.value.trim(), price = Number(matPrice.value);
   if(!name || price <= 0) return alert('Data tidak valid!');
   const d = getMaterials();
   if(editIndex === -1) d.push({name, price}); else { d[editIndex] = {name, price}; editIndex = -1; btnSaveMat.innerText = 'Tambah'; }
   setMaterials(d); renderInventory(); matName.value = ''; matPrice.value = '';
-}
+};
 
 function editMaterial(i){
     const item = getMaterials()[i]; matName.value = item.name; matPrice.value = item.price; 
     editIndex = i; btnSaveMat.innerText = 'Update'; matName.focus();
 }
 
-function deleteMaterial(i){ if(confirm('Hapus material?')){ const d = getMaterials(); d.splice(i,1); setMaterials(d); renderInventory(); } }
+window.deleteMaterial = function(i){ if(confirm('Hapus material?')){ const d = getMaterials(); d.splice(i,1); setMaterials(d); renderInventory(); } };
 
 function loadMaterialSelect(){
   materialSelect.innerHTML = '';
@@ -468,23 +439,12 @@ function generateInvoiceNum(){
   return inv;
 }
 
-// FUNGSI BARU UNTUK MEMASTIKAN PESANAN BARU TIDAK MENIMPA DATA LAMA
 function calculateAndSave() {
-    // Jika tidak dalam mode edit (isEditMode = false), maka buat nomor invoice baru
-    if (!isEditMode) {
-        generateInvoiceNum();
-    }
-    
-    // Jalankan kalkulasi utama
+    if (!isEditMode) generateInvoiceNum();
     calculate(false);
-    
-    // Beri notifikasi
     showNotification();
-    
-    // Setelah simpan, jika sebelumnya Edit Mode, kembalikan ke New Mode agar tombol Hitung selanjutnya membuat data baru
     if (isEditMode) {
         isEditMode = false;
-        // Opsional: generate nomer baru untuk persiapan input selanjutnya
         generateInvoiceNum();
     }
 }
@@ -492,7 +452,7 @@ function calculateAndSave() {
 function calculate(isLoading = false){
   const [h, m] = time.value.split(':').map(Number);
   const hours = h + (m/60);
-  const s = JSON.parse(localStorage.getItem('setup_3d') || '{}');
+  const s = JSON.parse(localStorage.getItem('setup_3d') || '{"depr":2100,"operator":2000,"watt":100,"kwh":1500,"maint":750}');
   
   const totalWeight = (+weight.value||0) + (+support.value||0) + (+waste.value||0);
   const matCost = totalWeight * ((materialSelect.value||0) / 1000);
@@ -545,26 +505,16 @@ function initChart(labels, profitData, hppData) {
     const ctx = document.getElementById('performanceChart').getContext('2d');
     if (performanceChart) performanceChart.destroy();
 
-    const isDark = document.body.classList.contains('dark');
-    const textColor = isDark ? '#94a3b8' : '#64748b';
+    // Selalu gunakan warna mode terang
+    const textColor = '#64748b';
 
     performanceChart = new Chart(ctx, {
         type: 'bar',
         data: {
             labels: labels,
             datasets: [
-                {
-                    label: 'Profit Bersih',
-                    data: profitData,
-                    backgroundColor: '#10b981',
-                    borderRadius: 5,
-                },
-                {
-                    label: 'Modal (HPP)',
-                    data: hppData,
-                    backgroundColor: '#3b82f6',
-                    borderRadius: 5,
-                }
+                { label: 'Profit Bersih', data: profitData, backgroundColor: '#10b981', borderRadius: 5 },
+                { label: 'Modal (HPP)', data: hppData, backgroundColor: '#3b82f6', borderRadius: 5 }
             ]
         },
         options: {
@@ -572,11 +522,11 @@ function initChart(labels, profitData, hppData) {
             maintainAspectRatio: false,
             scales: {
                 x: { stacked: true, ticks: { color: textColor }, grid: { display: false } },
-                y: { stacked: true, ticks: { color: textColor, callback: value => 'Rp ' + value.toLocaleString() }, grid: { color: isDark ? '#334155' : '#e2e8f0' } }
+                y: { stacked: true, ticks: { color: textColor, callback: v => 'Rp ' + v.toLocaleString() }, grid: { color: '#e2e8f0' } }
             },
             plugins: {
                 legend: { position: 'top', labels: { color: textColor, font: { weight: 'bold' } } },
-                tooltip: { callbacks: { label: context => context.dataset.label + ': ' + rp(context.raw) } }
+                tooltip: { callbacks: { label: ctx => ctx.dataset.label + ': ' + rp(ctx.raw) } }
             }
         }
     });
@@ -593,13 +543,9 @@ function renderHistory(){
     const searchTerm = document.getElementById('historySearch').value.toLowerCase();
     list.innerHTML = '';
     
-    let totalRevenue = 0;
-    let totalProfit = 0;
+    let totalRevenue = 0, totalProfit = 0;
     const historyData = getHistory();
-
-    const chartLabels = [];
-    const chartProfit = [];
-    const chartHPP = [];
+    const chartLabels = [], chartProfit = [], chartHPP = [];
 
     historyData.slice(0, 7).reverse().forEach(item => {
         chartLabels.push(item.inv.split('-').pop()); 
@@ -630,14 +576,13 @@ function renderHistory(){
     document.getElementById('statRevenue').innerText = rp(totalRevenue);
     document.getElementById('statProfit').innerText = rp(totalProfit);
     document.getElementById('statOrders').innerText = historyData.length;
-
     initChart(chartLabels, chartProfit, chartHPP);
 }
 
 function loadFromHistory(i){
     const item = getHistory()[i];
     if(!item) return;
-    isEditMode = true; // Masuk ke mode edit
+    isEditMode = true;
     customer.value = item.cust; itemName.value = item.item || ''; 
     document.getElementById('invDisplay').innerText = item.inv;
     weight.value = item.details.weight; time.value = item.details.time;
@@ -648,10 +593,7 @@ function loadFromHistory(i){
     paymentStatus.value = item.status || 'BELUM LUNAS';
     
     for(let opt of materialSelect.options) {
-        if(opt.text === item.details.matName) {
-            materialSelect.value = opt.value;
-            break;
-        }
+        if(opt.text === item.details.matName) { materialSelect.value = opt.value; break; }
     }
     document.querySelector('[data-bs-target="#calc"]').click(); 
     calculate(true);
@@ -664,103 +606,56 @@ function resetInvCounter(){ if(confirm('Reset nomor invoice ke 0001?')){ localSt
 function exportPDF(){
   const { jsPDF } = window.jspdf;
   const doc = new jsPDF('p', 'mm', 'a4');
-  const primaryColor = [16, 185, 129]; 
-  const darkSlate = [30, 41, 59];
-  const lightGray = [241, 245, 249];
+  const primaryColor = [16, 185, 129], darkSlate = [30, 41, 59], lightGray = [241, 245, 249];
   const data = lastCalculatedData;
 
   if(!data.inv) return alert("Silahkan Hitung & Simpan data terlebih dahulu!");
 
-  doc.setFillColor(primaryColor[0], primaryColor[1], primaryColor[2]);
-  doc.rect(0, 0, 210, 45, 'F');
-  doc.setTextColor(255, 255, 255);
-  doc.setFont("helvetica", "bold");
-  doc.setFontSize(26);
-  doc.text("SIMPANG", 15, 22);
-  doc.setFont("helvetica", "normal");
-  doc.text("STUDIO.", 63, 22);
-  doc.setFontSize(9);
-  doc.text("Professional 3D Model & Printing Solution", 15, 29);
-  doc.setFontSize(14);
-  doc.text("INVOICE", 160, 20);
-  doc.setFontSize(10);
-  doc.text(data.inv, 160, 26);
+  doc.setFillColor(...primaryColor); doc.rect(0, 0, 210, 45, 'F');
+  doc.setTextColor(255); doc.setFont("helvetica", "bold"); doc.setFontSize(26);
+  doc.text("SIMPANG", 15, 22); doc.setFont("helvetica", "normal"); doc.text("STUDIO.", 63, 22);
+  doc.setFontSize(9); doc.text("Professional 3D Model & Printing Solution", 15, 29);
+  doc.setFontSize(14); doc.text("INVOICE", 160, 20); doc.setFontSize(10); doc.text(data.inv, 160, 26);
 
-  doc.setTextColor(darkSlate[0], darkSlate[1], darkSlate[2]);
-  doc.setFontSize(8); doc.setFont("helvetica", "bold");
-  doc.text("DITAGIHKAN KEPADA:", 15, 60);
-  doc.setFont("helvetica", "normal"); doc.setFontSize(11);
-  doc.text(customer.value || "Pelanggan Umum", 15, 67);
+  doc.setTextColor(...darkSlate); doc.setFontSize(8); doc.setFont("helvetica", "bold"); doc.text("DITAGIHKAN KEPADA:", 15, 60);
+  doc.setFont("helvetica", "normal"); doc.setFontSize(11); doc.text(customer.value || "Pelanggan Umum", 15, 67);
+  doc.setFontSize(8); doc.setFont("helvetica", "bold"); doc.text("TANGGAL TERBIT:", 160, 60);
+  doc.setFont("helvetica", "normal"); doc.setFontSize(10); doc.text(new Date().toLocaleDateString('id-ID'), 160, 67);
 
-  doc.setFontSize(8); doc.setFont("helvetica", "bold");
-  doc.text("TANGGAL TERBIT:", 160, 60);
-  doc.setFont("helvetica", "normal"); doc.setFontSize(10);
-  doc.text(new Date().toLocaleDateString('id-ID'), 160, 67);
+  doc.setFillColor(...lightGray); doc.rect(15, 78, 180, 10, 'F');
+  doc.setFont("helvetica", "bold"); doc.setFontSize(9); doc.text("DESKRIPSI PESANAN", 20, 84.5); doc.text("TOTAL", 160, 84.5);
 
-  doc.setFillColor(lightGray[0], lightGray[1], lightGray[2]);
-  doc.rect(15, 78, 180, 10, 'F');
-  doc.setFont("helvetica", "bold"); doc.setFontSize(9);
-  doc.text("DESKRIPSI PESANAN", 20, 84.5);
-  doc.text("TOTAL", 160, 84.5);
-
-  doc.setFontSize(10);
-  doc.text(itemName.value || "Custom 3D Printing Object", 20, 98);
+  doc.setFontSize(10); doc.text(itemName.value || "Custom 3D Printing Object", 20, 98);
   doc.setFont("helvetica", "normal"); doc.setFontSize(8); doc.setTextColor(100);
   const mat = materialSelect.options[materialSelect.selectedIndex]?.text || "-";
   doc.text(`Material: ${mat}`, 20, 104);
   doc.text(`Spesifikasi: ${(+weight.value)+(+support.value)+(+waste.value)}g | ${time.value} jam pengerjaan`, 20, 109);
-  doc.setTextColor(darkSlate[0], darkSlate[1], darkSlate[2]);
-  doc.text(rp(data.subtotal), 160, 98);
+  doc.setTextColor(...darkSlate); doc.text(rp(data.subtotal), 160, 98);
 
-  let yPos = 125;
-  doc.setDrawColor(230); doc.line(15, yPos, 195, yPos);
-  yPos += 8; doc.setFontSize(9);
-  doc.text("Subtotal:", 130, yPos);
-  doc.text(rp(data.subtotal), 190, yPos, {align: 'right'});
+  let yPos = 125; doc.setDrawColor(230); doc.line(15, yPos, 195, yPos);
+  yPos += 8; doc.setFontSize(9); doc.text("Subtotal:", 130, yPos); doc.text(rp(data.subtotal), 190, yPos, {align: 'right'});
 
   if(data.discAmount > 0) {
-      yPos += 6; doc.setTextColor(220, 38, 38);
-      doc.text(`Diskon (${discount.value}%):`, 130, yPos);
-      doc.text(`-${rp(data.discAmount)}`, 190, yPos, {align: 'right'});
+      yPos += 6; doc.setTextColor(220, 38, 38); doc.text(`Diskon (${discount.value}%):`, 130, yPos); doc.text(`-${rp(data.discAmount)}`, 190, yPos, {align: 'right'});
   }
-
   if(data.taxAmount > 0) {
-      yPos += 6; doc.setTextColor(primaryColor[0], primaryColor[1], primaryColor[2]);
-      doc.text(`PPN (${taxActive.value}%):`, 130, yPos);
-      doc.text(rp(data.taxAmount), 190, yPos, {align: 'right'});
+      yPos += 6; doc.setTextColor(...primaryColor); doc.text(`PPN (${taxActive.value}%):`, 130, yPos); doc.text(rp(data.taxAmount), 190, yPos, {align: 'right'});
   }
 
-  yPos += 8;
-  doc.setFillColor(primaryColor[0], primaryColor[1], primaryColor[2]);
-  doc.rect(125, yPos - 5, 70, 12, 'F');
+  yPos += 8; doc.setFillColor(...primaryColor); doc.rect(125, yPos - 5, 70, 12, 'F');
   doc.setTextColor(255); doc.setFont("helvetica", "bold"); doc.setFontSize(11);
-  doc.text("TOTAL AKHIR:", 130, yPos + 2.5);
-  doc.text(rp(data.total), 190, yPos + 2.5, {align: 'right'});
+  doc.text("TOTAL AKHIR:", 130, yPos + 2.5); doc.text(rp(data.total), 190, yPos + 2.5, {align: 'right'});
 
-  yPos = 210;
-  doc.setTextColor(darkSlate[0], darkSlate[1], darkSlate[2]); doc.setFontSize(9);
-  doc.text("SYARAT & KETENTUAN:", 15, yPos);
-  doc.setDrawColor(primaryColor[0], primaryColor[1], primaryColor[2]); doc.line(15, yPos + 2, 50, yPos + 2);
-
+  yPos = 210; doc.setTextColor(...darkSlate); doc.setFontSize(9); doc.text("SYARAT & KETENTUAN:", 15, yPos);
+  doc.setDrawColor(...primaryColor); doc.line(15, yPos + 2, 50, yPos + 2);
   doc.setFont("helvetica", "normal"); doc.setFontSize(8); doc.setTextColor(100);
-  const terms = ["1. Barang sudah dicetak sesuai file tidak dapat dibatalkan.", "2. Estimasi waktu tergantung antrian.", "3. Simpang Studio tidak bertanggung jawab atas kesalahan desain dari customer.", "4. Terima kasih telah mempercayakan proyek 3D anda kepada Simpang Studio"];
-  terms.forEach((t, i) => doc.text(t, 15, yPos + 8 + (i * 4)));
+  ["1. Barang sudah dicetak sesuai file tidak dapat dibatalkan.", "2. Estimasi waktu tergantung antrian.", "3. Simpang Studio tidak bertanggung jawab atas kesalahan desain.", "4. Terima kasih telah mempercayakan proyek anda."].forEach((t, i) => doc.text(t, 15, yPos + 8 + (i * 4)));
 
-  doc.saveGraphicsState();
-  doc.setGState(new doc.GState({opacity: 0.1}));
-  doc.setFontSize(70);
+  doc.saveGraphicsState(); doc.setGState(new doc.GState({opacity: 0.1})); doc.setFontSize(70);
   doc.setTextColor(data.status === 'LUNAS' ? 16 : 220, data.status === 'LUNAS' ? 185 : 38, data.status === 'LUNAS' ? 129 : 38);
-  doc.text(data.status === 'LUNAS' ? "PAID" : "UNPAID", 120, 140, {align:'center', angle:45});
-  doc.restoreGraphicsState();
+  doc.text(data.status === 'LUNAS' ? "PAID" : "UNPAID", 120, 140, {align:'center', angle:45}); doc.restoreGraphicsState();
 
   doc.save(`${data.inv}_${customer.value || 'Client'}.pdf`);
-}
-
-    function toggleDark(){ 
-    document.body.classList.toggle('dark');
-    const btn = document.getElementById('themeBtn');
-    btn.innerText = document.body.classList.contains('dark') ? '☀️ Mode Terang' : '🌙 Mode Gelap';
-    renderHistory(); 
 }
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -777,8 +672,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    const inputs = ['customer', 'itemName', 'weight', 'time', 'support', 'waste', 'profit', 'risk', 'discount'];
-    inputs.forEach(id => {
+    ['customer', 'itemName', 'weight', 'time', 'support', 'waste', 'profit', 'risk', 'discount'].forEach(id => {
         const el = document.getElementById(id);
         if(el) {
             if(sessionStorage.getItem('form_'+id)) el.value = sessionStorage.getItem('form_'+id);
@@ -786,11 +680,10 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    renderInventory(); 
-    renderHistory(); 
-    generateInvoiceNum();
+    renderInventory(); renderHistory(); generateInvoiceNum();
 });
-    
+</script>
+
 <script type="module">
   import { initializeApp, getApps, getApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
   import { getFirestore, doc, setDoc, collection, onSnapshot, deleteDoc, getDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
@@ -930,5 +823,3 @@ document.addEventListener('DOMContentLoaded', () => {
 </script>
 </body>
 </html>
-
-
