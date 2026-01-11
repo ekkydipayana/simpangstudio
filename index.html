@@ -21,7 +21,6 @@
 </script>
 
 <style>
-/* --- ORIGINAL STYLES --- */
 :root { 
     --primary: #10b981; 
     --primary-dark: #059669;
@@ -166,12 +165,12 @@ body {
 #viewer-container {
     width: 100%;
     height: 350px;
-    background: #1e293b; 
+    background: #1e293b; /* Dark bg for 3D */
     border-radius: 12px;
     position: relative;
     overflow: hidden;
     margin-bottom: 1rem;
-    display: none; 
+    display: none; /* Hidden by default until file uploaded */
 }
 #viewer-loading {
     position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
@@ -186,50 +185,9 @@ body {
     transition: 0.2s;
 }
 .upload-area:hover { border-color: var(--primary); background: #f0fdf4; }
-
-/* --- ADMIN/CUSTOMER VISIBILITY --- */
-.admin-only {
-    display: none !important;
-}
-/* Menggunakan initial untuk menghindari konflik flexbox bootstrap */
-.is-admin .admin-only {
-    display: block !important; 
-}
-/* Fix khusus untuk elemen yang butuh display:flex saat jadi admin */
-.is-admin div.admin-only-flex {
-    display: flex !important;
-}
-
-.customer-view-placeholder {
-    display: none;
-    padding: 10px;
-    background: #fff3cd;
-    border-radius: 8px;
-    font-size: 0.85rem;
-    color: #856404;
-    text-align: center;
-}
-.is-customer .customer-view-placeholder {
-    display: block;
-}
-
-#loginOverlay {
-    position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-    background: white; z-index: 99999;
-    display: flex; justify-content: center; align-items: center;
-}
 </style>
 </head>
 <body>
-
-<div id="loginOverlay">
-    <div class="card p-5 shadow-lg text-center" style="max-width: 400px;">
-        <h2 class="fw-800 mb-2">Simpang<span style="color:var(--primary)">Studio.</span></h2>
-        <p class="text-muted mb-4">Silahkan Login untuk Melanjutkan</p>
-        <button id="btnLogin" class="btn btn-dark w-100 py-3 fw-bold">Login dengan Google</button>
-        <p class="small text-muted mt-3">Sistem akan otomatis mendeteksi jika Anda Admin atau Pelanggan.</p>
-    </div>
-</div>
 
 <div id="studio-toast">Data Berhasil Disimpan! ✅</div>
     
@@ -237,16 +195,15 @@ body {
     <div class="d-flex justify-content-between align-items-center mb-4">
         <div>
             <h2 class="fw-800 m-0" style="letter-spacing: -1px;">Simpang<span style="color:var(--primary)">Studio.</span></h2>
-            <p class="text-muted small m-0" id="userStatusText">Memuat User...</p>
+            <p class="text-muted small m-0">Professional 3D Printing Business Manager</p>
         </div>
-        <button onclick="logout()" class="btn btn-sm btn-outline-danger">Logout</button>
     </div>
 
     <ul class="nav nav-pills mb-4 justify-content-center" id="mainTabs">
-        <li class="nav-item"><button class="nav-link active" data-bs-toggle="tab" data-bs-target="#calc">⚡ Kalkulator / Order</button></li>
+        <li class="nav-item"><button class="nav-link active" data-bs-toggle="tab" data-bs-target="#calc">⚡ Kalkulator</button></li>
         <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#history">📜 Riwayat</button></li>
-        <li class="nav-item admin-only"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#inventory">📦 Material</button></li>
-        <li class="nav-item admin-only"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#setup">⚙️ Setup</button></li>
+        <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#inventory">📦 Material</button></li>
+        <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#setup">⚙️ Setup</button></li>
     </ul>
 
     <div class="tab-content">
@@ -259,30 +216,26 @@ body {
                             <div class="upload-area" id="dropZone" onclick="document.getElementById('file3d').click()">
                                 <span style="font-size: 2rem;">📤</span>
                                 <p class="mb-0 fw-bold text-muted">Klik untuk upload .STL atau .OBJ</p>
-                                <p class="small text-muted mb-0">File akan disimpan ke Server</p>
+                                <p class="small text-muted mb-0">Auto-calculate Weight & Time (Bambu Lab Profile)</p>
                                 <input type="file" id="file3d" accept=".stl,.obj" hidden>
                             </div>
                             
                             <div id="viewer-container" class="mt-3 shadow-inner">
                                 <div id="viewer-loading">Processing 3D Model...</div>
-                                <div id="adminDownloadArea" class="position-absolute bottom-0 start-0 w-100 p-2 bg-dark bg-opacity-75 text-center admin-only" style="z-index:10;">
-                                    <a id="downloadLink" href="#" target="_blank" class="btn btn-sm btn-light fw-bold">⬇️ Download File Customer</a>
-                                </div>
                             </div>
                             
                             <div id="modelStats" class="mt-2 small text-muted text-center" style="display:none">
                                 <span class="me-3">📐 Volume: <b id="statVol">0</b> cm³</span>
-                                <span>⏲️ Estimasi: <b class="text-primary">Auto Filled</b></span>
+                                <span>⏲️ Estimasi Bambu: <b class="text-primary">Auto Filled</b></span>
                             </div>
                         </div>
                     </div>
-                    
                     <div class="card"><div class="card-body p-4">
                         <h6 class="fw-bold mb-4 text-uppercase tracking-wider">Identitas Pesanan</h6>
                         <div class="row g-3">
                             <div class="col-md-6">
                                 <label class="form-label">Nama Pelanggan</label>
-                                <input class="form-control" id="customer" placeholder="Siapa pemesannya?" readonly>
+                                <input class="form-control" id="customer" placeholder="Siapa pemesannya?">
                             </div>
                             <div class="col-md-6">
                                 <label class="form-label">Nama Item / Model</label>
@@ -293,44 +246,32 @@ body {
 
                     <div class="card"><div class="card-body p-4">
                         <h6 class="fw-bold mb-4 text-uppercase tracking-wider">Parameter Teknis</h6>
-                        
                         <div class="row g-3">
                             <div class="col-md-6">
                                 <label class="form-label">Pilih Material</label>
                                 <select id="materialSelect" class="form-select"></select>
                             </div>
+                            <div class="col-md-3 col-6">
+                                <label class="form-label">Berat (gr)</label>
+                                <input type="number" class="form-control" id="weight" placeholder="0">
+                            </div>
+                            <div class="col-md-3 col-6">
+                                <label class="form-label">Waktu (Jam:Menit)</label>
+                                <input type="time" class="form-control" id="time" value="01:00">
+                            </div>
+                            <div class="col-md-3 col-6">
+                                <label class="form-label">Support (gr)</label>
+                                <input type="number" class="form-control" id="support" value="0">
+                            </div>
+                            <div class="col-md-3 col-6">
+                                <label class="form-label">Waste (gr)</label>
+                                <input type="number" class="form-control" id="waste" value="0">
+                            </div>
                             <div class="col-md-6">
-                                <label class="form-label">Harga per Gram</label>
+                                <label class="form-label">Harga per Gram (Filamen)</label>
                                 <input class="form-control bg-light-custom fw-bold" id="priceGram" readonly>
                             </div>
                         </div>
-
-                        <div class="admin-only mt-2">
-                             <div class="row g-3">
-                                <div class="col-12"><hr> <small class="text-danger fw-bold">AREA VALIDASI ADMIN</small></div>
-                                <div class="col-md-3 col-6">
-                                    <label class="form-label">Berat (gr)</label>
-                                    <input type="number" class="form-control" id="weight" placeholder="0">
-                                </div>
-                                <div class="col-md-3 col-6">
-                                    <label class="form-label">Waktu (Jam:Menit)</label>
-                                    <input type="time" class="form-control" id="time" value="00:00">
-                                </div>
-                                <div class="col-md-3 col-6">
-                                    <label class="form-label">Support (gr)</label>
-                                    <input type="number" class="form-control" id="support" value="0">
-                                </div>
-                                <div class="col-md-3 col-6">
-                                    <label class="form-label">Waste (gr)</label>
-                                    <input type="number" class="form-control" id="waste" value="0">
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="customer-view-placeholder mt-3">
-                            Berat & Waktu Cetak akan dihitung oleh Admin setelah file divalidasi.
-                        </div>
-
                     </div></div>
                 </div>
 
@@ -338,51 +279,43 @@ body {
                     <div class="result-display shadow-sm">
                         <p>TOTAL HARGA JUAL</p>
                         <h2 id="total">Rp 0</h2>
-                        <div id="breakdown" class="small mt-2 opacity-75">Status: <span id="statusDisplay">DRAFT</span></div>
+                        <div id="breakdown" class="small mt-2 opacity-75"></div>
                     </div>
 
                     <div class="card"><div class="card-body p-4">
-                        <div class="admin-only">
-                            <h6 class="fw-bold mb-3 text-uppercase tracking-wider">Adjustment (Admin)</h6>
-                            <div class="row g-2">
-                                <div class="col-6 mb-2">
-                                    <label class="form-label">Profit (%)</label>
-                                    <input type="number" class="form-control" id="profit" value="30">
-                                </div>
-                                <div class="col-6 mb-2">
-                                    <label class="form-label">Risk (%)</label>
-                                    <input type="number" class="form-control" id="risk" value="10">
-                                </div>
-                                <div class="col-6 mb-3">
-                                    <label class="form-label text-danger">Diskon (%)</label>
-                                    <input type="number" class="form-control border-danger" id="discount" value="0">
-                                </div>
-                                <div class="col-6 mb-3">
-                                    <label class="form-label text-primary">Pajak (PPN)</label>
-                                    <select id="taxActive" class="form-select border-primary">
-                                        <option value="0">Tanpa PPN</option>
-                                        <option value="11">PPN 11%</option>
-                                    </select>
-                                </div>
-                                <div class="col-12 mb-3">
-                                    <label class="form-label fw-bold">Status Pembayaran</label>
-                                    <select id="paymentStatus" class="form-select border-success fw-bold text-success">
-                                        <option value="MENUNGGU VALIDASI">MENUNGGU VALIDASI</option>
-                                        <option value="MENUNGGU PEMBAYARAN">MENUNGGU PEMBAYARAN</option>
-                                        <option value="LUNAS">LUNAS</option>
-                                    </select>
-                                </div>
+                        <h6 class="fw-bold mb-3 text-uppercase tracking-wider">Adjustment</h6>
+                        <div class="row g-2">
+                            <div class="col-6 mb-2">
+                                <label class="form-label">Profit (%)</label>
+                                <input type="number" class="form-control" id="profit" value="30">
+                            </div>
+                            <div class="col-6 mb-2">
+                                <label class="form-label">Risk (%)</label>
+                                <input type="number" class="form-control" id="risk" value="10">
+                            </div>
+                            <div class="col-6 mb-3">
+                                <label class="form-label text-danger">Diskon (%)</label>
+                                <input type="number" class="form-control border-danger" id="discount" value="0">
+                            </div>
+                            <div class="col-6 mb-3">
+                                <label class="form-label text-primary">Pajak (PPN)</label>
+                                <select id="taxActive" class="form-select border-primary">
+                                    <option value="0">Tanpa PPN</option>
+                                    <option value="11">PPN 11%</option>
+                                </select>
+                            </div>
+                            <div class="col-12 mb-3">
+                                <label class="form-label fw-bold">Status Pembayaran</label>
+                                <select id="paymentStatus" class="form-select border-success fw-bold text-success">
+                                    <option value="LUNAS">LUNAS / PAID</option>
+                                    <option value="BELUM LUNAS">BELUM LUNAS / UNPAID</option>
+                                </select>
                             </div>
                         </div>
-                        
-                        <button id="btnMainAction" class="btn btn-primary-studio w-100 text-white mb-2 shadow-sm" onclick="calculateAndSave()">PROSES PESANAN</button>
-                        
-                        <div class="admin-only">
-                            <button class="btn btn-dark w-100 border-0 py-2 fw-bold" onclick="exportPDF()">📄 CETAK INVOICE</button>
-                        </div>
-                        
+                        <button class="btn btn-primary-studio w-100 text-white mb-2 shadow-sm" onclick="calculateAndSave()">HITUNG & SIMPAN</button>
+                        <button class="btn btn-dark w-100 border-0 py-2 fw-bold" onclick="exportPDF()">📄 CETAK INVOICE</button>
                         <div class="mt-3 text-center border-top pt-2">
-                            <span class="text-muted small">No. Invoice: </span><span id="invDisplay" class="fw-bold small">-</span>
+                            <span class="text-muted small">No. Terakhir: </span><span id="invDisplay" class="fw-bold small">-</span>
                         </div>
                     </div></div>
                 </div>
@@ -390,42 +323,40 @@ body {
         </div>
 
         <div class="tab-pane fade" id="history">
-            <div class="admin-only mb-4">
-                <div class="row g-3">
-                    <div class="col-md-3">
-                        <div class="stat-card-new shadow-sm">
-                            <div class="stat-icon bg-success bg-opacity-10 text-success">💰</div>
-                            <small class="text-muted fw-600 d-block mb-1">Total Omzet</small>
-                            <h4 class="fw-800 m-0" id="statRevenue" style="color: var(--primary)">Rp 0</h4>
-                        </div>
+            <div class="row g-3 mb-4">
+                <div class="col-md-3">
+                    <div class="stat-card-new shadow-sm">
+                        <div class="stat-icon bg-success bg-opacity-10 text-success">💰</div>
+                        <small class="text-muted fw-600 d-block mb-1">Total Omzet</small>
+                        <h4 class="fw-800 m-0" id="statRevenue" style="color: var(--primary)">Rp 0</h4>
                     </div>
-                    <div class="col-md-3">
-                        <div class="stat-card-new shadow-sm">
-                            <div class="stat-icon bg-info bg-opacity-10 text-info">📈</div>
-                            <small class="text-muted fw-600 d-block mb-1">Total Profit</small>
-                            <h4 class="fw-800 m-0 text-info" id="statProfit">Rp 0</h4>
-                        </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="stat-card-new shadow-sm">
+                        <div class="stat-icon bg-info bg-opacity-10 text-info">📈</div>
+                        <small class="text-muted fw-600 d-block mb-1">Total Profit</small>
+                        <h4 class="fw-800 m-0 text-info" id="statProfit">Rp 0</h4>
                     </div>
-                    <div class="col-md-3">
-                        <div class="stat-card-new shadow-sm">
-                            <div class="stat-icon bg-primary bg-opacity-10 text-primary">📦</div>
-                            <small class="text-muted fw-600 d-block mb-1">Total Pesanan</small>
-                            <h4 class="fw-800 m-0 text-primary" id="statOrders">0</h4>
-                        </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="stat-card-new shadow-sm">
+                        <div class="stat-icon bg-primary bg-opacity-10 text-primary">📦</div>
+                        <small class="text-muted fw-600 d-block mb-1">Total Pesanan</small>
+                        <h4 class="fw-800 m-0 text-primary" id="statOrders">0</h4>
                     </div>
-                    <div class="col-md-3">
-                        <div class="stat-card-new shadow-sm">
-                            <div class="stat-icon bg-warning bg-opacity-10 text-warning">🔍</div>
-                            <small class="text-muted fw-600 d-block mb-1">Cari Data</small>
-                            <div class="search-box-wrapper">
-                                <input type="text" id="historySearch" class="form-control form-control-sm" placeholder="Nama/Item/Invoice..." onkeyup="renderHistory()">
-                            </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="stat-card-new shadow-sm">
+                        <div class="stat-icon bg-warning bg-opacity-10 text-warning">🔍</div>
+                        <small class="text-muted fw-600 d-block mb-1">Cari Data</small>
+                        <div class="search-box-wrapper">
+                            <input type="text" id="historySearch" class="form-control form-control-sm" placeholder="Nama/Item/Invoice..." onkeyup="renderHistory()">
                         </div>
                     </div>
                 </div>
             </div>
 
-            <div class="card mb-4 admin-only">
+            <div class="card mb-4">
                 <div class="card-body">
                     <h6 class="fw-bold mb-3 text-uppercase tracking-wider">Performance Analytics (Profit vs Modal)</h6>
                     <div class="chart-container">
@@ -456,7 +387,7 @@ body {
             </div></div>
         </div>
 
-        <div class="tab-pane fade admin-only" id="inventory">
+        <div class="tab-pane fade" id="inventory">
             <div class="card"><div class="card-body p-4">
                 <h5 class="fw-bold mb-4 text-success">Manajemen Filamen</h5>
                 <div class="row g-2 mb-4 bg-light-custom p-3 rounded-4">
@@ -468,7 +399,7 @@ body {
             </div></div>
         </div>
 
-        <div class="tab-pane fade admin-only" id="setup">
+        <div class="tab-pane fade" id="setup">
             <div class="card"><div class="card-body p-4">
                 <h5 class="fw-bold mb-4 text-success">Biaya Operasional (Cost per Hour)</h5>
                 <div class="row g-3">
@@ -488,13 +419,10 @@ body {
 </div>
 
 <script type="module">
-// --- FIREBASE IMPORTS ---
+// --- FIREBASE SETUP ---
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-import { getAuth, signInWithPopup, GoogleAuthProvider, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-import { getFirestore, doc, setDoc, updateDoc, addDoc, collection, onSnapshot, deleteDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
-import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-storage.js";
-
-// --- THREE JS IMPORTS ---
+import { getFirestore, doc, setDoc, collection, onSnapshot, deleteDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+// --- THREE JS IMPORTS FOR 3D VIEWER ---
 import * as THREE from 'three';
 import { STLLoader } from 'three/addons/loaders/STLLoader.js';
 import { OBJLoader } from 'three/addons/loaders/OBJLoader.js';
@@ -510,11 +438,9 @@ const firebaseConfig = {
 };
 
 const app = initializeApp(firebaseConfig);
-const auth = getAuth(app);
 const db = getFirestore(app);
-const storage = getStorage(app);
 
-// --- GLOBAL VARIABLES ---
+// --- GLOBAL STATE ---
 let materialsData = [];
 let historyData = [];
 let editIndex = -1; 
@@ -523,137 +449,137 @@ let currentEditingInv = "";
 let lastCalculatedData = {};
 let performanceChart = null;
 
-// User State
-let currentUser = null;
-let isAdmin = false;
-// MASUKKAN EMAIL ADMIN ANDA DISINI
-const ADMIN_EMAILS = ["simpang.studio@gmail.com", "admin@simpangstudio.com"];
-
-// File Upload State
-let currentFile = null;
-
-// --- AUTH LOGIC ---
-const provider = new GoogleAuthProvider();
-document.getElementById('btnLogin').addEventListener('click', () => {
-    signInWithPopup(auth, provider).catch((err) => alert("Login Error: " + err.message));
-});
-
-window.logout = () => signOut(auth);
-
-onAuthStateChanged(auth, (user) => {
-    if (user) {
-        currentUser = user;
-        document.getElementById('loginOverlay').style.display = 'none';
-        document.getElementById('customer').value = user.displayName; // Auto fill nama
-
-        // Check Admin
-        isAdmin = ADMIN_EMAILS.includes(user.email);
-        
-        if (isAdmin) {
-            document.body.classList.add('is-admin');
-            document.body.classList.remove('is-customer');
-            document.getElementById('userStatusText').innerHTML = `Halo Admin, ${user.displayName}`;
-            document.getElementById('btnMainAction').innerText = "HITUNG & SIMPAN (ADMIN)";
-        } else {
-            document.body.classList.remove('is-admin');
-            document.body.classList.add('is-customer');
-            document.getElementById('userStatusText').innerHTML = `Halo Pelanggan, ${user.displayName}`;
-            document.getElementById('btnMainAction').innerText = "PESAN SEKARANG";
-            // Set default value for hidden fields to prevent NaN
-            document.getElementById('paymentStatus').value = "MENUNGGU VALIDASI";
-        }
-        renderHistory(); // Re-render table based on permission
-    } else {
-        document.getElementById('loginOverlay').style.display = 'flex';
-        currentUser = null;
-    }
-});
-
-// --- THREE JS VIEWER ---
-let scene, camera, renderer, mesh;
+// --- 3D VIEWER VARIABLES ---
+let scene, camera, renderer, mesh, controls;
 const viewerContainer = document.getElementById('viewer-container');
 
-function init3DViewer() {
-    scene = new THREE.Scene();
-    scene.background = new THREE.Color(0x1e293b);
-    
-    const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
-    scene.add(ambientLight);
-    const dirLight = new THREE.DirectionalLight(0xffffff, 0.8);
-    dirLight.position.set(0, 10, 10);
-    scene.add(dirLight);
-
-    camera = new THREE.PerspectiveCamera(45, viewerContainer.clientWidth / viewerContainer.clientHeight, 0.1, 1000);
-    camera.position.set(0, 50, 100);
-
-    renderer = new THREE.WebGLRenderer({ antialias: true });
-    renderer.setSize(viewerContainer.clientWidth, viewerContainer.clientHeight);
-    viewerContainer.appendChild(renderer.domElement);
-
-    animate();
-}
-
-function animate() {
-    requestAnimationFrame(animate);
-    if(mesh) mesh.rotation.y += 0.005;
-    renderer.render(scene, camera);
-}
-
-document.getElementById('file3d').addEventListener('change', function(e){
-    const file = e.target.files[0];
-    if(!file) return;
-    
-    currentFile = file; // Simpan file di variabel global untuk diupload saat save
-    document.getElementById('itemName').value = file.name;
-
-    document.getElementById('dropZone').style.display = 'none';
-    viewerContainer.style.display = 'block';
-    const loading = document.getElementById('viewer-loading');
-    loading.style.display = 'block';
-
-    if(!scene) init3DViewer();
-    if(mesh) { scene.remove(mesh); mesh = null; }
-
-    const url = URL.createObjectURL(file);
-    const ext = file.name.split('.').pop().toLowerCase();
-
-    const onLoad = (object) => {
-        if(ext === 'obj') {
-            object.traverse(function(child){ if(child.isMesh) mesh = child; });
-        } else {
-            const material = new THREE.MeshPhongMaterial({ color: 0x10b981, specular: 0x111111, shininess: 200 });
-            mesh = new THREE.Mesh(object, material);
-        }
-
-        mesh.geometry.computeBoundingBox();
-        const center = mesh.geometry.boundingBox.getCenter(new THREE.Vector3());
-        mesh.geometry.translate(-center.x, -center.y, -center.z);
-        
-        const size = mesh.geometry.boundingBox.getSize(new THREE.Vector3());
-        const maxDim = Math.max(size.x, size.y, size.z);
-        camera.position.z = maxDim * 2.5; 
-        camera.position.y = maxDim * 0.5;
-        camera.lookAt(0,0,0);
-
-        scene.add(mesh);
-        loading.style.display = 'none';
-    };
-
-    if(ext === 'stl') new STLLoader().load(url, onLoad);
-    else if (ext === 'obj') new OBJLoader().load(url, onLoad);
-});
-
-// --- CORE FUNCTIONS ---
-
-// Helper
+// --- UTILITY ---
 const rp = n => 'Rp ' + (Math.round(n) || 0).toLocaleString('id-ID');
+
 window.showNotification = function() {
     const toast = document.getElementById('studio-toast');
     toast.style.display = 'block';
     setTimeout(() => { toast.style.display = 'none'; }, 3000);
 }
 
-// 1. GENERATE INVOICE
+// --- REALTIME LISTENERS (CRUD: READ) ---
+onSnapshot(collection(db, "materials"), (snapshot) => {
+    materialsData = [];
+    snapshot.forEach(doc => {
+        materialsData.push(doc.data());
+    });
+    localStorage.setItem('materials', JSON.stringify(materialsData));
+    renderInventory();
+});
+
+onSnapshot(collection(db, "orders"), (snapshot) => {
+    historyData = [];
+    snapshot.forEach(doc => historyData.push(doc.data()));
+    historyData.sort((a, b) => b.inv.localeCompare(a.inv));
+    
+    let maxNum = 0;
+    historyData.forEach(o => {
+        const parts = o.inv.split('-');
+        if(parts.length === 3) {
+            const num = parseInt(parts[2]);
+            if(num > maxNum) maxNum = num;
+        }
+    });
+    localStorage.setItem('inv_counter', maxNum + 1);
+
+    localStorage.setItem('order_history', JSON.stringify(historyData));
+    renderHistory();
+    if(!isEditMode) { generateInvoiceNum(); }
+});
+
+onSnapshot(doc(db, "settings", "config"), (docSnap) => {
+    if (docSnap.exists()) {
+        const data = docSnap.data();
+        localStorage.setItem('setup_3d', JSON.stringify(data));
+        ['depr', 'operator', 'watt', 'kwh', 'maint'].forEach(key => {
+            const el = document.getElementById(key);
+            if (el && data[key]) el.value = data[key];
+        });
+    }
+});
+
+// --- INVENTORY FUNCTIONS ---
+window.renderInventory = function(){
+    const list = document.getElementById('materialList'); 
+    list.innerHTML = '';
+    materialsData.forEach((m) => {
+        list.innerHTML += `
+        <div class="list-group-item d-flex justify-content-between align-items-center py-3 border-0 border-bottom bg-transparent">
+            <div>
+                <span class="fw-bold d-block">${m.name}</span>
+                <span class="text-success small fw-bold">${rp(m.price)} / Kg</span>
+            </div>
+            <div>
+                <button class="btn-action btn-edit me-1" onclick="editMaterial('${m.name}')">Edit</button>
+                <button class="btn-action btn-del" onclick="deleteMaterial('${m.name}')">Hapus</button>
+            </div>
+        </div>`;
+    });
+    loadMaterialSelect();
+}
+
+window.loadMaterialSelect = function(){
+    const materialSelect = document.getElementById('materialSelect');
+    materialSelect.innerHTML = '';
+    if(materialsData.length === 0) {
+        materialSelect.innerHTML = `<option value="0">-- Tambah Material di Tab Stok --</option>`;
+    } else {
+        materialsData.forEach(m => { materialSelect.innerHTML += `<option value="${m.price}">${m.name}</option>`; });
+    }
+    updatePriceGram();
+}
+
+window.updatePriceGram = function(){ 
+    const materialSelect = document.getElementById('materialSelect');
+    const priceGram = document.getElementById('priceGram');
+    if(materialSelect.value) priceGram.value = rp(materialSelect.value / 1000); 
+}
+document.getElementById('materialSelect').addEventListener('change', window.updatePriceGram);
+
+window.saveMaterial = async function() {
+    const nameEl = document.getElementById('matName');
+    const priceEl = document.getElementById('matPrice');
+    const btn = document.getElementById('btnSaveMat');
+    
+    const name = nameEl.value.trim();
+    const price = Number(priceEl.value);
+
+    if(!name || price <= 0) return alert('Data tidak valid!');
+
+    if (editIndex !== -1 && editIndex !== name) {
+        await deleteDoc(doc(db, "materials", editIndex));
+    }
+
+    await setDoc(doc(db, "materials", name), { name, price });
+
+    nameEl.value = ''; priceEl.value = '';
+    editIndex = -1;
+    btn.innerText = 'Simpan';
+};
+
+window.editMaterial = function(name){
+    const item = materialsData.find(m => m.name === name);
+    if(item) {
+        document.getElementById('matName').value = item.name;
+        document.getElementById('matPrice').value = item.price;
+        editIndex = name; 
+        document.getElementById('btnSaveMat').innerText = 'Update';
+        document.getElementById('matName').focus();
+    }
+}
+
+window.deleteMaterial = async function(name){ 
+    if(confirm(`Hapus material ${name}?`)){ 
+        await deleteDoc(doc(db, "materials", name));
+    } 
+}
+
+// --- CALCULATOR & ORDERS ---
 window.generateInvoiceNum = function(){
     if(isEditMode && currentEditingInv) return currentEditingInv;
     const y = new Date().getFullYear();
@@ -663,83 +589,31 @@ window.generateInvoiceNum = function(){
     return inv;
 }
 
-// 2. MAIN LOGIC (MODIFIED FOR ADMIN/CUSTOMER)
 window.calculateAndSave = async function() {
-    if(!currentUser) return alert("Silakan login terlebih dahulu!");
+    const weightVal = +document.getElementById('weight').value || 0;
+    if(weightVal <= 0) return alert("Berat harus diisi atau Upload Model 3D!");
     
-    // Validasi
-    const itemName = document.getElementById('itemName').value;
-    if (!itemName) return alert("Nama Item harus diisi!");
-    
-    // A. LOGIC PELANGGAN (Upload & Create)
-    if (!isAdmin && !isEditMode) {
-        if (!currentFile) return alert("Harap upload file 3D terlebih dahulu!");
-        
-        const btn = document.getElementById('btnMainAction');
-        btn.innerText = "Mengupload File..."; btn.disabled = true;
+    const resultObj = calculate();
+    await setDoc(doc(db, "orders", resultObj.inv), resultObj);
+    showNotification();
 
-        try {
-            // Upload to Firebase Storage
-            const storageRef = ref(storage, 'models/' + currentUser.uid + '/' + Date.now() + '_' + currentFile.name);
-            const snapshot = await uploadBytes(storageRef, currentFile);
-            const downloadURL = await getDownloadURL(snapshot.ref);
-
-            // Data Pesanan Awal (Belum ada harga real)
-            const invId = generateInvoiceNum();
-            const orderData = {
-                inv: invId,
-                custUid: currentUser.uid,
-                cust: currentUser.displayName,
-                item: itemName,
-                matName: document.getElementById('materialSelect').options[document.getElementById('materialSelect').selectedIndex]?.text,
-                matPrice: document.getElementById('materialSelect').value,
-                fileUrl: downloadURL, // Simpan Link
-                status: "MENUNGGU VALIDASI",
-                total: 0,
-                hpp: 0, netProfit: 0,
-                timestamp: Date.now(),
-                details: { weight: 0, time: "00:00", support: 0, waste: 0, profit: 30, risk: 10, discount: 0, tax: 0 }
-            };
-
-            await setDoc(doc(db, "orders", invId), orderData);
-            
-            // Update Counter
-            localStorage.setItem('inv_counter', parseInt(localStorage.getItem('inv_counter') || 1) + 1);
-            
-            showNotification();
-            resetForm();
-            // Switch tab to history
-            const historyTabBtn = document.querySelector('[data-bs-target="#history"]');
-            if(historyTabBtn) new bootstrap.Tab(historyTabBtn).show();
-            
-        } catch (error) {
-            console.error(error);
-            alert("Gagal mengupload: " + error.message);
-        } finally {
-            btn.innerText = "PESAN SEKARANG"; btn.disabled = false;
+    if (!isEditMode) {
+        localStorage.setItem('inv_counter', parseInt(localStorage.getItem('inv_counter') || 1) + 1);
+        generateInvoiceNum(); 
+        document.getElementById('customer').value = '';
+        document.getElementById('itemName').value = '';
+        document.getElementById('weight').value = '';
+        // Reset 3D Viewer if exists
+        if(scene) {
+             while(scene.children.length > 0){ 
+                scene.remove(scene.children[0]); 
+             }
+             document.getElementById('viewer-container').style.display = 'none';
         }
-    } 
-    // B. LOGIC ADMIN (Validate & Update)
-    else {
-        // Jika Admin, hitung harga berdasarkan input
-        const resultObj = calculate(); // Panggil fungsi hitung
-        
-        // Pastikan uid tidak hilang saat update
-        if(!resultObj.custUid && isEditMode) {
-             const existing = historyData.find(x => x.inv === currentEditingInv);
-             if(existing) resultObj.custUid = existing.custUid;
-        }
-        
-        await updateDoc(doc(db, "orders", currentEditingInv || resultObj.inv), resultObj);
-        
-        showNotification();
-        if(!isEditMode) {
-            localStorage.setItem('inv_counter', parseInt(localStorage.getItem('inv_counter') || 1) + 1);
-            generateInvoiceNum();
-            resetForm();
-        } else {
-            // Tetap di mode edit atau kembali? Disini kita tetap agar bisa print
-        }
+    } else {
+        isEditMode = false;
+        currentEditingInv = "";
+        generateInvoiceNum();
     }
 }
 
@@ -776,7 +650,6 @@ function calculate(){
     const grandTotal = afterDisc + taxAmount;
     const netProfit = grandTotal - hpp - taxAmount;
 
-    // UI Update
     document.getElementById('total').innerText = rp(grandTotal);
     document.getElementById('breakdown').innerHTML = `HPP: ${rp(hpp)} | Pajak: ${rp(taxAmount)}`;
 
@@ -784,11 +657,20 @@ function calculate(){
     const custName = document.getElementById('customer').value;
     const itemName = document.getElementById('itemName').value;
     const payStatus = document.getElementById('paymentStatus').value;
+    
     const matNameText = document.getElementById('materialSelect').options[document.getElementById('materialSelect').selectedIndex]?.text;
 
-    lastCalculatedData = { inv: currentInv, total: grandTotal, status: payStatus };
+    lastCalculatedData = {
+        inv: currentInv, 
+        total: grandTotal,
+        status: payStatus,
+        subtotal: subtotal,
+        discAmount: discAmount,
+        taxAmount: taxAmount,
+        hpp: hpp,
+        netProfit: netProfit
+    };
 
-    // Return Data Object
     return {
         inv: currentInv, 
         cust: custName, 
@@ -806,100 +688,49 @@ function calculate(){
     };
 }
 
-function resetForm() {
-    document.getElementById('itemName').value = '';
-    document.getElementById('weight').value = '';
-    // Reset 3D Viewer
-    if(scene) {
-         while(scene.children.length > 0){ scene.remove(scene.children[0]); }
-         document.getElementById('viewer-container').style.display = 'none';
-         document.getElementById('dropZone').style.display = 'block';
-    }
-    currentFile = null;
-    currentEditingInv = "";
-    isEditMode = false;
-    document.getElementById('btnMainAction').classList.remove('btn-warning');
-    if(isAdmin) document.getElementById('btnMainAction').innerText = "HITUNG & SIMPAN (ADMIN)";
-    else document.getElementById('btnMainAction').innerText = "PESAN SEKARANG";
-    generateInvoiceNum();
-}
-
-// 3. RENDER HISTORY (DIPERBAIKI UNTUK MENGATASI MASALAH EMPTY)
+// --- HISTORY FUNCTIONS ---
 window.renderHistory = function(){
     const list = document.getElementById('historyList'); 
-    
-    // Tampilkan loading jika user belum terdeteksi (tapi jangan di-return kosong permanen)
-    if (!currentUser) {
-        list.innerHTML = '<tr><td colspan="6" class="text-center py-4 text-muted"><div class="spinner-border spinner-border-sm" role="status"></div> Memuat Data...</td></tr>';
-        return; 
-    }
-
     const searchTerm = document.getElementById('historySearch').value.toLowerCase();
-    list.innerHTML = ''; 
+    list.innerHTML = '';
     
     let totalRevenue = 0, totalProfit = 0;
     const chartLabels = [], chartProfit = [], chartHPP = [];
 
-    const filteredData = historyData.filter(item => {
-        // Logic Filter: Admin lihat semua, User lihat punya sendiri
-        // Added fallback logic: if item.custUid is missing, check by name
-        const isOwner = isAdmin ? true : (item.custUid === currentUser.uid || item.cust === currentUser.displayName);
-        
-        const matches = (item.cust || "").toLowerCase().includes(searchTerm) || 
-                        (item.item || "").toLowerCase().includes(searchTerm) || 
-                        (item.inv || "").toLowerCase().includes(searchTerm);
-        return isOwner && matches;
-    });
-
-    // Jika data kosong
-    if (filteredData.length === 0) {
-        list.innerHTML = '<tr><td colspan="6" class="text-center py-4 text-muted">Belum ada riwayat pesanan.</td></tr>';
-    }
-
-    // Sort descending (Terbaru di atas)
-    filteredData.sort((a,b) => b.timestamp - a.timestamp);
-
-    filteredData.slice(0, 7).reverse().forEach(item => {
+    historyData.slice(0, 7).reverse().forEach(item => {
         chartLabels.push(item.inv.split('-').pop()); 
         chartProfit.push(item.netProfit || 0);
         chartHPP.push(item.hpp || 0);
     });
 
-    filteredData.forEach((item) => {
-        totalRevenue += item.total;
-        totalProfit += (item.netProfit || 0);
-        
-        let badgeColor = 'bg-secondary';
-        if (item.status === 'LUNAS') badgeColor = 'bg-success';
-        else if (item.status === 'MENUNGGU PEMBAYARAN') badgeColor = 'bg-warning text-dark';
-        
-        let actionBtn = '';
-        if (isAdmin) {
-            actionBtn = `<button class="btn-action btn-edit me-1" onclick="loadFromHistory('${item.inv}')">Validasi</button>
-                         <button class="btn-action btn-del" onclick="deleteHistory('${item.inv}')">Hapus</button>`;
-        } else {
-             if(item.status === "MENUNGGU VALIDASI") actionBtn = `<span class="badge bg-secondary">Sedang Dicek</span>`;
-             else if(item.status === "MENUNGGU PEMBAYARAN") actionBtn = `<button class="btn btn-sm btn-success">Bayar</button>`;
-             else actionBtn = `<span class="badge bg-success">Selesai</span>`;
+    historyData.forEach((item) => {
+        if((item.cust || "").toLowerCase().includes(searchTerm) || 
+           (item.item || "").toLowerCase().includes(searchTerm) || 
+           item.inv.toLowerCase().includes(searchTerm)) {
+            
+            totalRevenue += item.total;
+            totalProfit += (item.netProfit || 0);
+            const badgeColor = item.status === 'LUNAS' ? 'bg-success' : 'bg-warning text-dark';
+            
+            list.innerHTML += `
+                <tr>
+                    <td class="ps-4 py-3"><span class="fw-bold text-success" style="font-size:0.85rem">${item.inv}</span></td>
+                    <td><span class="fw-600">${item.cust || '-'}</span></td>
+                    <td><span class="badge-custom">${item.item || '-'}</span></td>
+                    <td><span class="badge ${badgeColor}" style="font-size:0.65rem; padding: 5px 8px;">${item.status || 'BELUM LUNAS'}</span></td>
+                    <td><span class="fw-800">${rp(item.total)}</span></td>
+                    <td class="text-center pe-4">
+                        <button class="btn-action btn-edit me-1" onclick="loadFromHistory('${item.inv}')">Buka</button>
+                        <button class="btn-action btn-del" onclick="deleteHistory('${item.inv}')">Hapus</button>
+                    </td>
+                </tr>`;
         }
-
-        list.innerHTML += `
-            <tr>
-                <td class="ps-4 py-3"><span class="fw-bold text-success" style="font-size:0.85rem">${item.inv}</span></td>
-                <td><span class="fw-600">${item.cust || '-'}</span></td>
-                <td><span class="badge-custom">${item.item || '-'}</span></td>
-                <td><span class="badge ${badgeColor}" style="font-size:0.65rem; padding: 5px 8px;">${item.status}</span></td>
-                <td><span class="fw-800">${item.total > 0 ? rp(item.total) : 'Estimasi'}</span></td>
-                <td class="text-center pe-4">${actionBtn}</td>
-            </tr>`;
     });
 
-    if(isAdmin){
-        document.getElementById('statRevenue').innerText = rp(totalRevenue);
-        document.getElementById('statProfit').innerText = rp(totalProfit);
-        document.getElementById('statOrders').innerText = filteredData.length;
-        initChart(chartLabels, chartProfit, chartHPP);
-    }
+    document.getElementById('statRevenue').innerText = rp(totalRevenue);
+    document.getElementById('statProfit').innerText = rp(totalProfit);
+    document.getElementById('statOrders').innerText = historyData.length;
+    initChart(chartLabels, chartProfit, chartHPP);
 }
 
 window.loadFromHistory = function(invId){
@@ -912,40 +743,28 @@ window.loadFromHistory = function(invId){
     document.getElementById('customer').value = item.cust; 
     document.getElementById('itemName').value = item.item || ''; 
     document.getElementById('invDisplay').innerText = item.inv;
+    document.getElementById('weight').value = item.details.weight; 
+    document.getElementById('time').value = item.details.time;
+    document.getElementById('support').value = item.details.support; 
+    document.getElementById('waste').value = item.details.waste;
+    document.getElementById('profit').value = item.details.profit; 
+    document.getElementById('risk').value = item.details.risk;
+    document.getElementById('discount').value = item.details.discount || 0;
+    document.getElementById('taxActive').value = item.details.tax || 0;
+    document.getElementById('paymentStatus').value = item.status || 'BELUM LUNAS';
     
-    // Fill Admin Fields
-    document.getElementById('weight').value = item.details?.weight || 0; 
-    document.getElementById('time').value = item.details?.time || "00:00";
-    document.getElementById('support').value = item.details?.support || 0; 
-    document.getElementById('waste').value = item.details?.waste || 0;
-    document.getElementById('paymentStatus').value = item.status || 'MENUNGGU VALIDASI';
-    
-    // Select Material
     const materialSelect = document.getElementById('materialSelect');
     for(let opt of materialSelect.options) {
-        if(opt.text === item.details?.matName) { materialSelect.value = opt.value; break; }
+        if(opt.text === item.details.matName) { materialSelect.value = opt.value; break; }
     }
     
-    // Tampilkan Link Download jika ada URL
-    if (item.fileUrl) {
-        document.getElementById('adminDownloadArea').style.display = 'block';
-        document.getElementById('downloadLink').href = item.fileUrl;
-        document.getElementById('viewer-container').style.display = 'block';
-    }
-
-    // Switch Tab
     const calcTabBtn = document.querySelector('[data-bs-target="#calc"]');
-    if(calcTabBtn) new bootstrap.Tab(calcTabBtn).show();
+    if(calcTabBtn) {
+        new bootstrap.Tab(calcTabBtn).show();
+    }
     
     updatePriceGram();
-    calculate(); // Hitung ulang visual
-    
-    // Ubah Tombol
-    if(isAdmin) {
-        const btn = document.getElementById('btnMainAction');
-        btn.innerText = "UPDATE HARGA & NOTIFIKASI USER";
-        btn.classList.add('btn-warning');
-    }
+    calculate(); 
 }
 
 window.deleteHistory = async function(invId){ 
@@ -954,54 +773,24 @@ window.deleteHistory = async function(invId){
     }
 };
 
-// --- INVENTORY, CHART, PDF (TETAP SAMA SEPERTI KODE ASLI) ---
-window.renderInventory = function(){
-    const list = document.getElementById('materialList'); 
-    list.innerHTML = '';
-    materialsData.forEach((m) => {
-        list.innerHTML += `
-        <div class="list-group-item d-flex justify-content-between align-items-center py-3 border-0 border-bottom bg-transparent">
-            <div><span class="fw-bold d-block">${m.name}</span><span class="text-success small fw-bold">${rp(m.price)} / Kg</span></div>
-            <div><button class="btn-action btn-del" onclick="deleteMaterial('${m.name}')">Hapus</button></div>
-        </div>`;
+window.resetInvCounter = function(){ 
+    if(confirm('Reset nomor invoice ke 0001? (Tidak menghapus data lama)')){ 
+        localStorage.setItem('inv_counter', 1); 
+        isEditMode = false;
+        generateInvoiceNum(); 
+    } 
+}
+
+const syncSetup = async () => {
+    const config = {};
+    ['depr', 'operator', 'watt', 'kwh', 'maint'].forEach(id => {
+        config[id] = +document.getElementById(id).value;
     });
-    loadMaterialSelect();
-}
-
-window.loadMaterialSelect = function(){
-    const materialSelect = document.getElementById('materialSelect');
-    materialSelect.innerHTML = '';
-    materialsData.forEach(m => { materialSelect.innerHTML += `<option value="${m.price}">${m.name}</option>`; });
-    updatePriceGram();
-}
-
-window.updatePriceGram = function(){ 
-    const materialSelect = document.getElementById('materialSelect');
-    const priceGram = document.getElementById('priceGram');
-    if(materialSelect.value) priceGram.value = rp(materialSelect.value / 1000); 
-}
-document.getElementById('materialSelect').addEventListener('change', window.updatePriceGram);
-
-window.saveMaterial = async function() {
-    const name = document.getElementById('matName').value;
-    const price = Number(document.getElementById('matPrice').value);
-    if(!name || price <= 0) return alert('Data tidak valid!');
-    await setDoc(doc(db, "materials", name), { name, price });
-    document.getElementById('matName').value = '';
+    await setDoc(doc(db, "settings", "config"), config);
 };
-window.deleteMaterial = async function(name){ await deleteDoc(doc(db, "materials", name)); }
-
-onSnapshot(collection(db, "materials"), (snapshot) => {
-    materialsData = []; snapshot.forEach(doc => materialsData.push(doc.data()));
-    if(isAdmin) renderInventory(); else loadMaterialSelect();
-});
-
-// LISTENER REALTIME PESANAN
-onSnapshot(collection(db, "orders"), (snapshot) => {
-    historyData = []; 
-    snapshot.forEach(doc => historyData.push(doc.data()));
-    // Panggil render setiap kali data berubah
-    renderHistory();
+['depr', 'operator', 'watt', 'kwh', 'maint'].forEach(id => {
+    const el = document.getElementById(id);
+    if(el) el.addEventListener('change', syncSetup);
 });
 
 function initChart(labels, profitData, hppData) {
@@ -1012,11 +801,18 @@ function initChart(labels, profitData, hppData) {
         data: {
             labels: labels,
             datasets: [
-                { label: 'Profit', data: profitData, backgroundColor: '#10b981' },
-                { label: 'Modal', data: hppData, backgroundColor: '#3b82f6' }
+                { label: 'Profit Bersih', data: profitData, backgroundColor: '#10b981', borderRadius: 5 },
+                { label: 'Modal (HPP)', data: hppData, backgroundColor: '#3b82f6', borderRadius: 5 }
             ]
         },
-        options: { responsive: true, maintainAspectRatio: false }
+        options: { 
+            responsive: true, 
+            maintainAspectRatio: false, 
+            scales: { 
+                y: { stacked: true, ticks: { callback: v => 'Rp ' + v.toLocaleString() } }, 
+                x: { stacked: true } 
+            } 
+        }
     });
 }
 
@@ -1025,16 +821,179 @@ window.exportPDF = function(){
     const doc = new jsPDF('p', 'mm', 'a4');
     calculate();
     const data = lastCalculatedData;
-    doc.setFontSize(16); doc.text("INVOICE", 15, 20);
-    doc.setFontSize(12); doc.text("Inv: " + data.inv, 15, 30);
-    doc.text("Total: " + rp(data.total), 15, 40);
+    if(!data.inv) return alert("Silahkan Hitung & Simpan data terlebih dahulu!");
+
+    doc.setFontSize(16);
+    doc.text("SIMPANG STUDIO INVOICE", 15, 20);
+    doc.setFontSize(12);
+    doc.text("Invoice: " + data.inv, 15, 30);
+    doc.text("Customer: " + (document.getElementById('customer').value || "Pelanggan"), 15, 40);
+    doc.text("Total: " + rp(data.total), 15, 50);
+    doc.text("Status: " + data.status, 15, 60);
     doc.save(`${data.inv}.pdf`);
 }
 
-window.resetInvCounter = function(){ if(confirm('Reset?')) localStorage.setItem('inv_counter', 1); }
+// -----------------------------------------------------
+// --- 3D VIEWER LOGIC & AUTO CALCULATE (Bambu Lab) ---
+// -----------------------------------------------------
 
-// Initial Call
+function init3DViewer() {
+    scene = new THREE.Scene();
+    scene.background = new THREE.Color(0x1e293b);
+    
+    // Light
+    const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+    scene.add(ambientLight);
+    const dirLight = new THREE.DirectionalLight(0xffffff, 0.8);
+    dirLight.position.set(0, 10, 10);
+    scene.add(dirLight);
+
+    camera = new THREE.PerspectiveCamera(45, viewerContainer.clientWidth / viewerContainer.clientHeight, 0.1, 1000);
+    camera.position.set(0, 50, 100);
+
+    renderer = new THREE.WebGLRenderer({ antialias: true });
+    renderer.setSize(viewerContainer.clientWidth, viewerContainer.clientHeight);
+    viewerContainer.appendChild(renderer.domElement);
+
+    animate();
+}
+
+function animate() {
+    requestAnimationFrame(animate);
+    if(mesh) {
+        mesh.rotation.y += 0.005; // Rotasi otomatis perlahan
+    }
+    renderer.render(scene, camera);
+}
+
+function getVolume(geometry) {
+    if (!geometry.isBufferGeometry) {
+        console.warn("'geometry' must be an indexed or non-indexed BufferGeometry");
+        return 0;
+    }
+    let isIndexed = geometry.index !== null;
+    let position = geometry.attributes.position;
+    let sum = 0;
+    let p1 = new THREE.Vector3(), p2 = new THREE.Vector3(), p3 = new THREE.Vector3();
+
+    if (!isIndexed) {
+        let faces = position.count / 3;
+        for (let i = 0; i < faces; i++) {
+            p1.fromBufferAttribute(position, i * 3 + 0);
+            p2.fromBufferAttribute(position, i * 3 + 1);
+            p3.fromBufferAttribute(position, i * 3 + 2);
+            sum += signedVolumeOfTriangle(p1, p2, p3);
+        }
+    } else {
+        let index = geometry.index;
+        let faces = index.count / 3;
+        for (let i = 0; i < faces; i++) {
+            p1.fromBufferAttribute(position, index.getX(i * 3 + 0));
+            p2.fromBufferAttribute(position, index.getX(i * 3 + 1));
+            p3.fromBufferAttribute(position, index.getX(i * 3 + 2));
+            sum += signedVolumeOfTriangle(p1, p2, p3);
+        }
+    }
+    return Math.abs(sum);
+}
+
+function signedVolumeOfTriangle(p1, p2, p3) {
+    return p1.dot(p2.cross(p3)) / 6.0;
+}
+
+document.getElementById('file3d').addEventListener('change', function(e){
+    const file = e.target.files[0];
+    if(!file) return;
+
+    // Reset UI
+    document.getElementById('dropZone').style.display = 'none';
+    viewerContainer.style.display = 'block';
+    const loading = document.getElementById('viewer-loading');
+    loading.style.display = 'block';
+
+    if(!scene) init3DViewer();
+    // Clear old mesh
+    if(mesh) { scene.remove(mesh); mesh = null; }
+
+    const url = URL.createObjectURL(file);
+    const ext = file.name.split('.').pop().toLowerCase();
+
+    const onLoad = (object) => {
+        if(ext === 'obj') {
+            // OBJLoader returns a Group, we need to find the mesh inside
+            object.traverse(function(child){
+                if(child.isMesh) mesh = child;
+            });
+        } else {
+            // STL returns Geometry, we create Mesh
+            const material = new THREE.MeshPhongMaterial({ color: 0x10b981, specular: 0x111111, shininess: 200 });
+            mesh = new THREE.Mesh(object, material);
+        }
+
+        // Center Geometry
+        mesh.geometry.computeBoundingBox();
+        const center = mesh.geometry.boundingBox.getCenter(new THREE.Vector3());
+        mesh.geometry.translate(-center.x, -center.y, -center.z); // Center at 0,0,0
+        
+        // Scale Camera to fit
+        const size = mesh.geometry.boundingBox.getSize(new THREE.Vector3());
+        const maxDim = Math.max(size.x, size.y, size.z);
+        camera.position.z = maxDim * 2.5; 
+        camera.position.y = maxDim * 0.5;
+        camera.lookAt(0,0,0);
+
+        scene.add(mesh);
+        loading.style.display = 'none';
+        
+        // --- AUTO CALCULATION LOGIC ---
+        // 1. Hitung Volume (cm3) -> convert dari mm3 ke cm3 (dibagi 1000)
+        // Unit STL biasanya mm.
+        const volMm3 = getVolume(mesh.geometry);
+        const volCm3 = volMm3 / 1000;
+        
+        // 2. Hitung Berat (Gram) -> Densitas PLA default ~1.24 g/cm3
+        const density = 1.24;
+        const weight = volCm3 * density;
+        
+        // 3. Estimasi Waktu (Bambu Lab Heuristic)
+        // Bambu Lab P1/X1 sangat cepat. Estimasi kasar:
+        // ~1.2 sampai 1.5 menit per gram untuk model standar + 8 menit persiapan/kalibrasi
+        // Ini adalah pendekatan heuristik karena browser tidak bisa slicing G-code.
+        const minutesPerGram = 1.3; 
+        const startupTime = 8; 
+        const totalMinutes = Math.round((weight * minutesPerGram) + startupTime);
+        
+        // Convert menit ke HH:MM
+        const h = Math.floor(totalMinutes / 60);
+        const m = totalMinutes % 60;
+        const timeString = `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}`;
+
+        // Update UI Inputs
+        document.getElementById('weight').value = Math.round(weight);
+        document.getElementById('time').value = timeString;
+        document.getElementById('itemName').value = file.name;
+        
+        // Update Stats Display
+        document.getElementById('modelStats').style.display = 'block';
+        document.getElementById('statVol').innerText = volCm3.toFixed(2);
+    };
+
+    if(ext === 'stl') {
+        new STLLoader().load(url, onLoad);
+    } else if (ext === 'obj') {
+        new OBJLoader().load(url, onLoad);
+    } else {
+        alert("Format file harus .stl atau .obj");
+        document.getElementById('dropZone').style.display = 'block';
+        viewerContainer.style.display = 'none';
+    }
+});
+
+// Initial Render
+renderInventory();
+renderHistory();
 generateInvoiceNum();
+
 </script>
 </body>
 </html>
