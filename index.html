@@ -816,25 +816,37 @@ function resetForm() {
 }
 
 // 3. RENDER HISTORY
+// Cari fungsi window.renderHistory dan GANTI SEMUANYA dengan ini:
+
 window.renderHistory = function(){
     const list = document.getElementById('historyList'); 
+    
+    // --- PERBAIKAN UTAMA DI SINI ---
+    // Jika currentUser belum ada (belum selesai login), hentikan fungsi agar tidak error
+    if (!currentUser) {
+        list.innerHTML = '<tr><td colspan="6" class="text-center py-4 text-muted">Memuat data pengguna...</td></tr>';
+        return; 
+    }
+    // -------------------------------
+
     const searchTerm = document.getElementById('historySearch').value.toLowerCase();
     list.innerHTML = '';
     
     let totalRevenue = 0, totalProfit = 0;
     const chartLabels = [], chartProfit = [], chartHPP = [];
 
-    // Filter Logic
     const filteredData = historyData.filter(item => {
-        // Jika Admin, lihat semua. Jika User, lihat punya sendiri (berdasarkan UID atau Nama)
+        // Logika Filter: Admin lihat semua, User lihat punya sendiri
+        // Karena kita sudah cek (!currentUser) di atas, baris ini sekarang aman:
         const isOwner = isAdmin ? true : (item.custUid === currentUser.uid);
+        
         const matches = (item.cust || "").toLowerCase().includes(searchTerm) || 
                         (item.item || "").toLowerCase().includes(searchTerm) || 
                         item.inv.toLowerCase().includes(searchTerm);
         return isOwner && matches;
     });
 
-    // Sort descending
+    // Sort descending (Terbaru di atas)
     filteredData.sort((a,b) => b.timestamp - a.timestamp);
 
     filteredData.slice(0, 7).reverse().forEach(item => {
@@ -851,13 +863,11 @@ window.renderHistory = function(){
         if (item.status === 'LUNAS') badgeColor = 'bg-success';
         else if (item.status === 'MENUNGGU PEMBAYARAN') badgeColor = 'bg-warning text-dark';
         
-        // Tombol Aksi Beda User/Admin
         let actionBtn = '';
         if (isAdmin) {
             actionBtn = `<button class="btn-action btn-edit me-1" onclick="loadFromHistory('${item.inv}')">Validasi</button>
                          <button class="btn-action btn-del" onclick="deleteHistory('${item.inv}')">Hapus</button>`;
         } else {
-             // User hanya melihat status
              if(item.status === "MENUNGGU VALIDASI") actionBtn = `<span class="badge bg-secondary">Sedang Dicek</span>`;
              else if(item.status === "MENUNGGU PEMBAYARAN") actionBtn = `<button class="btn btn-sm btn-success">Bayar</button>`;
              else actionBtn = `<span class="badge bg-success">Selesai</span>`;
@@ -1015,3 +1025,4 @@ generateInvoiceNum();
 </script>
 </body>
 </html>
+
