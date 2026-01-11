@@ -187,16 +187,19 @@ body {
 }
 .upload-area:hover { border-color: var(--primary); background: #f0fdf4; }
 
-/* --- TAMBAHAN STYLE UNTUK FITUR ADMIN/CUSTOMER --- */
-/* Class ini akan menyembunyikan elemen jika user bukan admin */
+/* --- ADMIN/CUSTOMER VISIBILITY --- */
 .admin-only {
     display: none !important;
 }
-/* Jika body punya class 'is-admin', maka tampilkan */
+/* Menggunakan initial untuk menghindari konflik flexbox bootstrap */
 .is-admin .admin-only {
-    display: block !important;
+    display: block !important; 
 }
-/* Tampilan khusus customer untuk area hidden */
+/* Fix khusus untuk elemen yang butuh display:flex saat jadi admin */
+.is-admin div.admin-only-flex {
+    display: flex !important;
+}
+
 .customer-view-placeholder {
     display: none;
     padding: 10px;
@@ -209,7 +212,7 @@ body {
 .is-customer .customer-view-placeholder {
     display: block;
 }
-/* Login Overlay */
+
 #loginOverlay {
     position: fixed; top: 0; left: 0; width: 100%; height: 100%;
     background: white; z-index: 99999;
@@ -302,23 +305,25 @@ body {
                             </div>
                         </div>
 
-                        <div class="row g-3 mt-2 admin-only">
-                            <div class="col-12"><hr> <small class="text-danger fw-bold">AREA VALIDASI ADMIN</small></div>
-                            <div class="col-md-3 col-6">
-                                <label class="form-label">Berat (gr)</label>
-                                <input type="number" class="form-control" id="weight" placeholder="0">
-                            </div>
-                            <div class="col-md-3 col-6">
-                                <label class="form-label">Waktu (Jam:Menit)</label>
-                                <input type="time" class="form-control" id="time" value="00:00">
-                            </div>
-                            <div class="col-md-3 col-6">
-                                <label class="form-label">Support (gr)</label>
-                                <input type="number" class="form-control" id="support" value="0">
-                            </div>
-                            <div class="col-md-3 col-6">
-                                <label class="form-label">Waste (gr)</label>
-                                <input type="number" class="form-control" id="waste" value="0">
+                        <div class="admin-only mt-2">
+                             <div class="row g-3">
+                                <div class="col-12"><hr> <small class="text-danger fw-bold">AREA VALIDASI ADMIN</small></div>
+                                <div class="col-md-3 col-6">
+                                    <label class="form-label">Berat (gr)</label>
+                                    <input type="number" class="form-control" id="weight" placeholder="0">
+                                </div>
+                                <div class="col-md-3 col-6">
+                                    <label class="form-label">Waktu (Jam:Menit)</label>
+                                    <input type="time" class="form-control" id="time" value="00:00">
+                                </div>
+                                <div class="col-md-3 col-6">
+                                    <label class="form-label">Support (gr)</label>
+                                    <input type="number" class="form-control" id="support" value="0">
+                                </div>
+                                <div class="col-md-3 col-6">
+                                    <label class="form-label">Waste (gr)</label>
+                                    <input type="number" class="form-control" id="waste" value="0">
+                                </div>
                             </div>
                         </div>
 
@@ -385,34 +390,36 @@ body {
         </div>
 
         <div class="tab-pane fade" id="history">
-            <div class="row g-3 mb-4 admin-only">
-                <div class="col-md-3">
-                    <div class="stat-card-new shadow-sm">
-                        <div class="stat-icon bg-success bg-opacity-10 text-success">💰</div>
-                        <small class="text-muted fw-600 d-block mb-1">Total Omzet</small>
-                        <h4 class="fw-800 m-0" id="statRevenue" style="color: var(--primary)">Rp 0</h4>
+            <div class="admin-only mb-4">
+                <div class="row g-3">
+                    <div class="col-md-3">
+                        <div class="stat-card-new shadow-sm">
+                            <div class="stat-icon bg-success bg-opacity-10 text-success">💰</div>
+                            <small class="text-muted fw-600 d-block mb-1">Total Omzet</small>
+                            <h4 class="fw-800 m-0" id="statRevenue" style="color: var(--primary)">Rp 0</h4>
+                        </div>
                     </div>
-                </div>
-                <div class="col-md-3">
-                    <div class="stat-card-new shadow-sm">
-                        <div class="stat-icon bg-info bg-opacity-10 text-info">📈</div>
-                        <small class="text-muted fw-600 d-block mb-1">Total Profit</small>
-                        <h4 class="fw-800 m-0 text-info" id="statProfit">Rp 0</h4>
+                    <div class="col-md-3">
+                        <div class="stat-card-new shadow-sm">
+                            <div class="stat-icon bg-info bg-opacity-10 text-info">📈</div>
+                            <small class="text-muted fw-600 d-block mb-1">Total Profit</small>
+                            <h4 class="fw-800 m-0 text-info" id="statProfit">Rp 0</h4>
+                        </div>
                     </div>
-                </div>
-                <div class="col-md-3">
-                    <div class="stat-card-new shadow-sm">
-                        <div class="stat-icon bg-primary bg-opacity-10 text-primary">📦</div>
-                        <small class="text-muted fw-600 d-block mb-1">Total Pesanan</small>
-                        <h4 class="fw-800 m-0 text-primary" id="statOrders">0</h4>
+                    <div class="col-md-3">
+                        <div class="stat-card-new shadow-sm">
+                            <div class="stat-icon bg-primary bg-opacity-10 text-primary">📦</div>
+                            <small class="text-muted fw-600 d-block mb-1">Total Pesanan</small>
+                            <h4 class="fw-800 m-0 text-primary" id="statOrders">0</h4>
+                        </div>
                     </div>
-                </div>
-                <div class="col-md-3">
-                    <div class="stat-card-new shadow-sm">
-                        <div class="stat-icon bg-warning bg-opacity-10 text-warning">🔍</div>
-                        <small class="text-muted fw-600 d-block mb-1">Cari Data</small>
-                        <div class="search-box-wrapper">
-                            <input type="text" id="historySearch" class="form-control form-control-sm" placeholder="Nama/Item/Invoice..." onkeyup="renderHistory()">
+                    <div class="col-md-3">
+                        <div class="stat-card-new shadow-sm">
+                            <div class="stat-icon bg-warning bg-opacity-10 text-warning">🔍</div>
+                            <small class="text-muted fw-600 d-block mb-1">Cari Data</small>
+                            <div class="search-box-wrapper">
+                                <input type="text" id="historySearch" class="form-control form-control-sm" placeholder="Nama/Item/Invoice..." onkeyup="renderHistory()">
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -558,6 +565,7 @@ onAuthStateChanged(auth, (user) => {
         renderHistory(); // Re-render table based on permission
     } else {
         document.getElementById('loginOverlay').style.display = 'flex';
+        currentUser = null;
     }
 });
 
@@ -629,10 +637,6 @@ document.getElementById('file3d').addEventListener('change', function(e){
 
         scene.add(mesh);
         loading.style.display = 'none';
-        
-        // Auto fill weight hanya jika Admin yang upload? 
-        // Atau biarkan 0 untuk customer agar admin yang validasi
-        // Di sini kita biarkan user melihat preview saja.
     };
 
     if(ext === 'stl') new STLLoader().load(url, onLoad);
@@ -661,6 +665,8 @@ window.generateInvoiceNum = function(){
 
 // 2. MAIN LOGIC (MODIFIED FOR ADMIN/CUSTOMER)
 window.calculateAndSave = async function() {
+    if(!currentUser) return alert("Silakan login terlebih dahulu!");
+    
     // Validasi
     const itemName = document.getElementById('itemName').value;
     if (!itemName) return alert("Nama Item harus diisi!");
@@ -702,6 +708,10 @@ window.calculateAndSave = async function() {
             
             showNotification();
             resetForm();
+            // Switch tab to history
+            const historyTabBtn = document.querySelector('[data-bs-target="#history"]');
+            if(historyTabBtn) new bootstrap.Tab(historyTabBtn).show();
+            
         } catch (error) {
             console.error(error);
             alert("Gagal mengupload: " + error.message);
@@ -714,9 +724,11 @@ window.calculateAndSave = async function() {
         // Jika Admin, hitung harga berdasarkan input
         const resultObj = calculate(); // Panggil fungsi hitung
         
-        // Simpan file url lama jika tidak upload baru
-        let finalFileUrl = "";
-        // Logic check file url ada di historyData... (disederhanakan: anggap update data saja)
+        // Pastikan uid tidak hilang saat update
+        if(!resultObj.custUid && isEditMode) {
+             const existing = historyData.find(x => x.inv === currentEditingInv);
+             if(existing) resultObj.custUid = existing.custUid;
+        }
         
         await updateDoc(doc(db, "orders", currentEditingInv || resultObj.inv), resultObj);
         
@@ -726,10 +738,7 @@ window.calculateAndSave = async function() {
             generateInvoiceNum();
             resetForm();
         } else {
-            // Jika edit mode selesai
-            // isEditMode = false;
-            // currentEditingInv = "";
-            // generateInvoiceNum();
+            // Tetap di mode edit atau kembali? Disini kita tetap agar bisa print
         }
     }
 }
@@ -815,36 +824,37 @@ function resetForm() {
     generateInvoiceNum();
 }
 
-// 3. RENDER HISTORY
-// Cari fungsi window.renderHistory dan GANTI SEMUANYA dengan ini:
-
+// 3. RENDER HISTORY (DIPERBAIKI UNTUK MENGATASI MASALAH EMPTY)
 window.renderHistory = function(){
     const list = document.getElementById('historyList'); 
     
-    // --- PERBAIKAN UTAMA DI SINI ---
-    // Jika currentUser belum ada (belum selesai login), hentikan fungsi agar tidak error
+    // Tampilkan loading jika user belum terdeteksi (tapi jangan di-return kosong permanen)
     if (!currentUser) {
-        list.innerHTML = '<tr><td colspan="6" class="text-center py-4 text-muted">Memuat data pengguna...</td></tr>';
+        list.innerHTML = '<tr><td colspan="6" class="text-center py-4 text-muted"><div class="spinner-border spinner-border-sm" role="status"></div> Memuat Data...</td></tr>';
         return; 
     }
-    // -------------------------------
 
     const searchTerm = document.getElementById('historySearch').value.toLowerCase();
-    list.innerHTML = '';
+    list.innerHTML = ''; 
     
     let totalRevenue = 0, totalProfit = 0;
     const chartLabels = [], chartProfit = [], chartHPP = [];
 
     const filteredData = historyData.filter(item => {
-        // Logika Filter: Admin lihat semua, User lihat punya sendiri
-        // Karena kita sudah cek (!currentUser) di atas, baris ini sekarang aman:
-        const isOwner = isAdmin ? true : (item.custUid === currentUser.uid);
+        // Logic Filter: Admin lihat semua, User lihat punya sendiri
+        // Added fallback logic: if item.custUid is missing, check by name
+        const isOwner = isAdmin ? true : (item.custUid === currentUser.uid || item.cust === currentUser.displayName);
         
         const matches = (item.cust || "").toLowerCase().includes(searchTerm) || 
                         (item.item || "").toLowerCase().includes(searchTerm) || 
-                        item.inv.toLowerCase().includes(searchTerm);
+                        (item.inv || "").toLowerCase().includes(searchTerm);
         return isOwner && matches;
     });
+
+    // Jika data kosong
+    if (filteredData.length === 0) {
+        list.innerHTML = '<tr><td colspan="6" class="text-center py-4 text-muted">Belum ada riwayat pesanan.</td></tr>';
+    }
 
     // Sort descending (Terbaru di atas)
     filteredData.sort((a,b) => b.timestamp - a.timestamp);
@@ -986,8 +996,11 @@ onSnapshot(collection(db, "materials"), (snapshot) => {
     if(isAdmin) renderInventory(); else loadMaterialSelect();
 });
 
+// LISTENER REALTIME PESANAN
 onSnapshot(collection(db, "orders"), (snapshot) => {
-    historyData = []; snapshot.forEach(doc => historyData.push(doc.data()));
+    historyData = []; 
+    snapshot.forEach(doc => historyData.push(doc.data()));
+    // Panggil render setiap kali data berubah
     renderHistory();
 });
 
@@ -1025,4 +1038,3 @@ generateInvoiceNum();
 </script>
 </body>
 </html>
-
