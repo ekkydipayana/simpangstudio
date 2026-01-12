@@ -135,10 +135,23 @@ body {
 .bg-light-custom { background-color: #f1f5f9 !important; }
 
 /* --- ADMIN ONLY UTILS --- */
-/* Secara default sembunyikan elemen admin */
 .admin-only { display: none !important; }
-/* Jika body punya class is-admin, tampilkan elemen admin */
 .is-admin .admin-only { display: block !important; }
+
+/* --- CALCULATOR BLOCKER --- */
+#calcBlocker {
+    position: absolute;
+    top: 0; left: 0; width: 100%; height: 100%;
+    background: rgba(255, 255, 255, 0.6);
+    backdrop-filter: blur(4px);
+    z-index: 999;
+    border-radius: 16px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+}
 </style>
 </head>
 <body class="">
@@ -165,7 +178,16 @@ body {
     </ul>
 
     <div class="tab-content">
-        <div class="tab-pane fade show active" id="calc">
+        <div class="tab-pane fade show active" id="calc" style="position: relative;">
+            
+            <div id="calcBlocker">
+                <div class="p-4 bg-white shadow rounded-4 border" style="max-width: 300px;">
+                    <div style="font-size: 3rem; margin-bottom: 10px;">🔒</div>
+                    <h5 class="fw-bold">Akses Terkunci</h5>
+                    <p class="text-muted small mb-3">Anda harus login atau daftar akun terlebih dahulu untuk menghitung dan menyimpan pesanan.</p>
+                    <button class="btn btn-primary-studio w-100 text-white" onclick="showAuthModal('login')">Login / Daftar</button>
+                </div>
+            </div>
             <div class="row">
                 <div class="col-lg-8">
                     <div class="card"><div class="card-body p-4">
@@ -365,7 +387,7 @@ body {
 
                 <div class="mt-4 pt-3 border-top d-flex justify-content-between align-items-center">
                     <button class="btn btn-outline-warning btn-sm fw-bold" onclick="resetInvCounter()">Reset Penomoran Invoice</button>
-                    <span class="text-muted small">Simpang Studio Engine v5.0 Final</span>
+                    <span class="text-muted small">Simpang Studio Engine v5.1 Locked Calculator</span>
                 </div>
             </div></div>
         </div>
@@ -436,11 +458,15 @@ let isRegisterMode = false;
 onAuthStateChanged(auth, (user) => {
     const authBtn = document.getElementById('authBtn');
     const userDisplay = document.getElementById('userEmailDisplay');
+    const calcBlocker = document.getElementById('calcBlocker');
     
     currentUser = user; 
 
     if (user) {
+        // === LOGGED IN ===
+        calcBlocker.style.display = 'none'; // BUKA GEMBOK CALCULATOR
         userDisplay.innerText = user.email;
+        
         // ADMIN CHECK (Hardcoded)
         if(user.email === 'admin@simpang.com') {
             isAdmin = true;
@@ -455,6 +481,8 @@ onAuthStateChanged(auth, (user) => {
         
         setupOrderListener(user);
     } else {
+        // === LOGGED OUT ===
+        calcBlocker.style.display = 'flex'; // KUNCI CALCULATOR
         userDisplay.innerText = "";
         isAdmin = false;
         document.body.classList.remove('is-admin');
@@ -471,6 +499,7 @@ onAuthStateChanged(auth, (user) => {
         historyData = [];
         renderHistory();
 
+        // Jika user sedang di tab admin, tendang ke tab calculator
         const activeTab = document.querySelector('.nav-link.active');
         if (activeTab) {
             const target = activeTab.getAttribute('data-bs-target');
