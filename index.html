@@ -239,7 +239,7 @@ body {
                     <div class="result-display shadow-sm">
                         <p>TOTAL HARGA JUAL</p>
                         <h2 id="total">Rp 0</h2>
-                        <div id="breakdown" class="small mt-2 opacity-75"></div>
+                        <div id="breakdown" class="small mt-2 opacity-75 admin-only"></div>
                     </div>
 
                     <div class="card"><div class="card-body p-4">
@@ -765,6 +765,14 @@ function calculate(){
     const s = JSON.parse(localStorage.getItem('setup_3d') || '{"depr":2100,"operator":2000,"watt":100,"kwh":1500,"maint":750, "profit":30, "risk":10}');
     
     const weightVal = +document.getElementById('weight').value || 0;
+    
+    // LOGIC: JIKA BERAT 0 -> TOTAL 0 (TIDAK HITUNG BIAYA MESIN)
+    if(weightVal === 0) {
+        document.getElementById('total').innerText = rp(0);
+        document.getElementById('breakdown').innerHTML = '';
+        return { inv: "", total: 0 }; // Return empty data
+    }
+
     const supportVal = +document.getElementById('support').value || 0;
     const wasteVal = +document.getElementById('waste').value || 0;
     const materialPrice = +document.getElementById('materialSelect').value || 0;
