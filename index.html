@@ -12,6 +12,7 @@
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
 <style>
+/* --- THEME VARS --- */
 :root { 
     --primary: #10b981; 
     --primary-dark: #059669;
@@ -27,6 +28,7 @@ body {
 
 .app-container { max-width: 1000px; margin: 2rem auto; }
 
+/* --- CARDS & UI --- */
 .card { 
     border: none; 
     border-radius: 16px; 
@@ -44,7 +46,6 @@ body {
     border-radius: 8px; 
     padding: 10px 20px;
 }
-
 .nav-pills .nav-link.active { background: var(--primary); color: white; box-shadow: 0 4px 6px -1px rgba(16, 185, 129, 0.4); }
 
 .result-display {
@@ -55,12 +56,10 @@ body {
     text-align: center;
     margin-bottom: 1.5rem;
 }
-
 .result-display h2 { font-weight: 800; font-size: 2.5rem; margin: 0; }
 .result-display p { opacity: 0.9; font-weight: 500; margin-bottom: 5px; }
 
 .form-label { font-weight: 600; color: #475569; font-size: 0.85rem; margin-bottom: 0.5rem; }
-
 .form-control, .form-select {
     border-radius: 10px;
     padding: 10px 14px;
@@ -75,7 +74,6 @@ body {
     border-radius: 10px;
     transition: 0.3s;
 }
-
 .btn-primary-studio:hover { background: var(--primary-dark); transform: translateY(-2px); }
 
 .btn-action {
@@ -86,10 +84,8 @@ body {
     transition: 0.2s;
     border: 1px solid transparent;
 }
-
 .btn-edit { color: #3b82f6; border-color: rgba(59, 130, 246, 0.3); background: rgba(59, 130, 246, 0.05); }
 .btn-edit:hover { background: #3b82f6; color: white; }
-
 .btn-del { color: #ef4444; border-color: rgba(239, 68, 68, 0.3); background: rgba(239, 68, 68, 0.05); }
 .btn-del:hover { background: #ef4444; color: white; }
 
@@ -103,7 +99,6 @@ body {
     height: 100%;
     transition: transform 0.2s;
 }
-
 .stat-icon {
     width: 40px;
     height: 40px;
@@ -115,17 +110,8 @@ body {
     font-size: 1.2rem;
 }
 
-.search-box-wrapper {
-    position: relative;
-    display: flex;
-    align-items: center;
-}
-.search-box-wrapper .form-control {
-    padding-left: 15px;
-    border-radius: 12px;
-    background: #f1f5f9;
-    border: none;
-}
+.search-box-wrapper { position: relative; display: flex; align-items: center; }
+.search-box-wrapper .form-control { padding-left: 15px; border-radius: 12px; background: #f1f5f9; border: none; }
 
 .table thead th {
     text-transform: uppercase;
@@ -136,11 +122,7 @@ body {
     padding: 15px;
 }
 
-.chart-container {
-    position: relative;
-    height: 250px;
-    width: 100%;
-}
+.chart-container { position: relative; height: 250px; width: 100%; }
 
 #studio-toast {
     position: fixed; top: 20px; right: 20px; z-index: 10000;
@@ -152,8 +134,10 @@ body {
 
 .bg-light-custom { background-color: #f1f5f9 !important; }
 
-/* Hide Admin Tabs/Elements by default */
+/* --- ADMIN ONLY UTILS --- */
+/* Secara default sembunyikan elemen admin */
 .admin-only { display: none !important; }
+/* Jika body punya class is-admin, tampilkan elemen admin */
 .is-admin .admin-only { display: block !important; }
 </style>
 </head>
@@ -321,7 +305,7 @@ body {
             <div class="card"><div class="card-body p-0">
                 <div class="p-4 d-flex justify-content-between align-items-center border-bottom">
                     <h5 class="fw-800 m-0">Riwayat Pesanan</h5>
-                    </div>
+                </div>
                 <div class="table-responsive">
                     <table class="table table-hover align-middle mb-0">
                         <thead>
@@ -381,7 +365,7 @@ body {
 
                 <div class="mt-4 pt-3 border-top d-flex justify-content-between align-items-center">
                     <button class="btn btn-outline-warning btn-sm fw-bold" onclick="resetInvCounter()">Reset Penomoran Invoice</button>
-                    <span class="text-muted small">Simpang Studio Engine v4.6 Multi-User</span>
+                    <span class="text-muted small">Simpang Studio Engine v5.0 Final</span>
                 </div>
             </div></div>
         </div>
@@ -440,27 +424,24 @@ let historyData = [];
 let editIndex = -1; 
 let isEditMode = false;
 let currentEditingInv = ""; 
+let currentEditingOwnerId = null; // Menyimpan ID Pemilik Asli
 let lastCalculatedData = {};
 let performanceChart = null;
 let isAdmin = false; 
-let currentUser = null; // Store current logged in user
-let unsubscribeOrders = null; // To stop listener on logout
-let isRegisterMode = false; // Toggle Login/Register
+let currentUser = null; 
+let unsubscribeOrders = null; 
+let isRegisterMode = false;
 
-// --- AUTH & LISTENER LOGIC ---
-
+// --- AUTH LISTENER & LOGIC ---
 onAuthStateChanged(auth, (user) => {
     const authBtn = document.getElementById('authBtn');
     const userDisplay = document.getElementById('userEmailDisplay');
     
-    currentUser = user; // Update Global User State
+    currentUser = user; 
 
     if (user) {
-        // --- LOGGED IN ---
         userDisplay.innerText = user.email;
-        
-        // Cek apakah Admin (Hardcoded Security)
-        // Di aplikasi real, gunakan Custom Claims atau Database Roles
+        // ADMIN CHECK (Hardcoded)
         if(user.email === 'admin@simpang.com') {
             isAdmin = true;
             document.body.classList.add('is-admin');
@@ -468,16 +449,12 @@ onAuthStateChanged(auth, (user) => {
             isAdmin = false;
             document.body.classList.remove('is-admin');
         }
-
         authBtn.innerHTML = "🔓 Logout";
         authBtn.classList.replace('btn-outline-dark', 'btn-danger');
         authBtn.onclick = doFirebaseLogout; 
         
-        // Setup Listener Database sesuai Role
         setupOrderListener(user);
-
     } else {
-        // --- LOGGED OUT ---
         userDisplay.innerText = "";
         isAdmin = false;
         document.body.classList.remove('is-admin');
@@ -490,12 +467,10 @@ onAuthStateChanged(auth, (user) => {
         document.getElementById('taxActive').value = 0;
         calculate(); 
 
-        // Hentikan listener lama & kosongkan data
         if(unsubscribeOrders) unsubscribeOrders();
         historyData = [];
         renderHistory();
 
-        // Kick dari tab admin
         const activeTab = document.querySelector('.nav-link.active');
         if (activeTab) {
             const target = activeTab.getAttribute('data-bs-target');
@@ -507,9 +482,7 @@ onAuthStateChanged(auth, (user) => {
     }
 });
 
-// --- REALTIME DATA LISTENER (ISOLATION LOGIC) ---
 function setupOrderListener(user) {
-    // Matikan listener sebelumnya jika ada (agar tidak double)
     if(unsubscribeOrders) unsubscribeOrders();
 
     let q;
@@ -517,34 +490,21 @@ function setupOrderListener(user) {
         // Admin: Lihat SEMUA pesanan
         q = collection(db, "orders");
     } else {
-        // User Biasa: Hanya lihat pesanan DENGAN userId MILIKNYA
+        // User: Hanya lihat pesanan SENDIRI
         q = query(collection(db, "orders"), where("userId", "==", user.uid));
     }
 
     unsubscribeOrders = onSnapshot(q, (snapshot) => {
         historyData = [];
         snapshot.forEach(doc => historyData.push(doc.data()));
-        
-        // Sorting
-        historyData.sort((a, b) => b.inv.localeCompare(a.inv));
-        
-        // Auto Counter Invoice
-        let maxNum = 0;
-        historyData.forEach(o => {
-            const parts = o.inv.split('-');
-            if(parts.length === 3) {
-                const num = parseInt(parts[2]);
-                if(num > maxNum) maxNum = num;
-            }
-        });
-        localStorage.setItem('inv_counter', maxNum + 1);
+        historyData.sort((a, b) => b.inv.localeCompare(a.inv)); // Sort by Invoice String (Timestamp)
         
         renderHistory();
         if(!isEditMode) generateInvoiceNum();
     });
 }
 
-// --- AUTH UI FUNCTIONS ---
+// --- AUTH UI HANDLERS ---
 window.showAuthModal = function(mode) {
     isRegisterMode = (mode === 'register');
     updateAuthModalUI();
@@ -582,7 +542,6 @@ window.handleAuthAction = function() {
     if(!email || !pass) return alert("Mohon isi email dan password.");
 
     if (isRegisterMode) {
-        // REGISTER FLOW
         createUserWithEmailAndPassword(auth, email, pass)
             .then((userCredential) => {
                 bootstrap.Modal.getInstance(document.getElementById('authModal')).hide();
@@ -592,7 +551,6 @@ window.handleAuthAction = function() {
                 alert("Gagal Daftar: " + error.message);
             });
     } else {
-        // LOGIN FLOW
         signInWithEmailAndPassword(auth, email, pass)
             .then((userCredential) => {
                 bootstrap.Modal.getInstance(document.getElementById('authModal')).hide();
@@ -614,7 +572,6 @@ window.doFirebaseLogout = function() {
 
 // --- UTILITY ---
 const rp = n => 'Rp ' + (Math.round(n) || 0).toLocaleString('id-ID');
-
 window.showNotification = function(msg = "Data Berhasil Disimpan! ✅") {
     const toast = document.getElementById('studio-toast');
     toast.innerText = msg;
@@ -622,8 +579,7 @@ window.showNotification = function(msg = "Data Berhasil Disimpan! ✅") {
     setTimeout(() => { toast.style.display = 'none'; }, 3000);
 }
 
-// --- OTHER LISTENERS (Materials & Settings) ---
-
+// --- DB SYNC (Inventory & Config) ---
 onSnapshot(collection(db, "materials"), (snapshot) => {
     materialsData = [];
     snapshot.forEach(doc => materialsData.push(doc.data()));
@@ -712,21 +668,29 @@ window.deleteMaterial = async function(name){
     if(confirm(`Hapus material ${name}?`)) await deleteDoc(doc(db, "materials", name));
 }
 
-// --- CALCULATOR & ORDERS ---
+// --- CALCULATOR & ORDERS (CORE FIX) ---
 
+// GENERATE UNIQUE INVOICE (Timestamp based)
 window.generateInvoiceNum = function(){
-    if(isEditMode && currentEditingInv) return currentEditingInv;
-    const y = new Date().getFullYear();
-    let lastNum = parseInt(localStorage.getItem('inv_counter') || 1);
-    const inv = `INV-${y}-${String(lastNum).padStart(4, '0')}`;
+    if(isEditMode && currentEditingInv) {
+        document.getElementById('invDisplay').innerText = currentEditingInv;
+        return currentEditingInv;
+    }
+    const now = new Date();
+    const Y = now.getFullYear();
+    const M = String(now.getMonth() + 1).padStart(2, '0');
+    const D = String(now.getDate()).padStart(2, '0');
+    const h = String(now.getHours()).padStart(2, '0');
+    const m = String(now.getMinutes()).padStart(2, '0');
+    const s = String(now.getSeconds()).padStart(2, '0');
+    const inv = `INV-${Y}${M}${D}-${h}${m}${s}`;
     document.getElementById('invDisplay').innerText = inv;
     return inv;
 }
 
 window.calculateAndSave = async function() {
-    // 1. CEK LOGIN TERLEBIH DAHULU
     if(!currentUser) {
-        alert("Silahkan Login atau Daftar Akun terlebih dahulu untuk menyimpan pesanan.");
+        alert("Silahkan Login atau Daftar Akun terlebih dahulu.");
         showAuthModal('login');
         return;
     }
@@ -736,16 +700,21 @@ window.calculateAndSave = async function() {
     
     const resultObj = calculate();
     
-    // 2. TAMBAHKAN USER ID KE DATA PESANAN
-    resultObj.userId = currentUser.uid; // ID Unik User
-    resultObj.userEmail = currentUser.email; // Email User (opsional, utk admin)
+    // FIX KEPEMILIKAN:
+    // Jika Edit: Pakai ID Owner Asli
+    if (isEditMode && currentEditingOwnerId) {
+        resultObj.userId = currentEditingOwnerId; 
+    } else {
+    // Jika Baru: Pakai ID User Login
+        resultObj.userId = currentUser.uid;
+        resultObj.userEmail = currentUser.email;
+    }
 
     await setDoc(doc(db, "orders", resultObj.inv), resultObj);
 
     showNotification("Pesanan Disimpan!");
 
     if (!isEditMode) {
-        localStorage.setItem('inv_counter', parseInt(localStorage.getItem('inv_counter') || 1) + 1);
         generateInvoiceNum(); 
         document.getElementById('customer').value = '';
         document.getElementById('itemName').value = '';
@@ -753,7 +722,10 @@ window.calculateAndSave = async function() {
     } else {
         isEditMode = false;
         currentEditingInv = "";
+        currentEditingOwnerId = null;
         generateInvoiceNum(); 
+        const btn = document.querySelector('button[onclick="calculateAndSave()"]');
+        if(btn) btn.innerText = "HITUNG & SIMPAN";
     }
 }
 
@@ -774,10 +746,8 @@ function calculate(){
     const opCost = (hours * ((s.depr||0) + (s.operator||0) + (s.maint||0))) + electric;
     
     const hpp = matCost + opCost;
-    
     const profitVal = +document.getElementById('profit').value || 30;
     const riskVal = +document.getElementById('risk').value || 10;
-    
     const subtotal = hpp + (hpp * profitVal / 100) + (hpp * riskVal / 100);
 
     const discPercent = +document.getElementById('discount').value || 0;
@@ -824,14 +794,11 @@ window.renderHistory = function(){
     let totalRevenue = 0, totalProfit = 0;
     const chartLabels = [], chartProfit = [], chartHPP = [];
 
-    // Jika tidak login, historyData akan kosong karena listener tidak aktif
-    // Tapi kita tambahkan pesan di tabel agar jelas
     if(historyData.length === 0 && !currentUser) {
         list.innerHTML = `<tr><td colspan="6" class="text-center py-4 text-muted">Silahkan <b>Login</b> untuk melihat riwayat pesanan Anda.</td></tr>`;
         return;
     }
 
-    // Chart logic
     historyData.slice(0, 7).reverse().forEach(item => {
         chartLabels.push(item.inv.split('-').pop()); 
         chartProfit.push(item.netProfit || 0);
@@ -849,7 +816,10 @@ window.renderHistory = function(){
             
             list.innerHTML += `
                 <tr>
-                    <td class="ps-4 py-3"><span class="fw-bold text-success" style="font-size:0.85rem">${item.inv}</span></td>
+                    <td class="ps-4 py-3">
+                        <span class="fw-bold text-success" style="font-size:0.85rem">${item.inv}</span>
+                        ${isAdmin && item.userEmail ? `<br><small class="text-muted" style="font-size:0.65rem">User: ${item.userEmail}</small>` : ''}
+                    </td>
                     <td><span class="fw-600">${item.cust || '-'}</span></td>
                     <td><span class="badge-custom">${item.item || '-'}</span></td>
                     <td><span class="badge ${badgeColor}" style="font-size:0.65rem; padding: 5px 8px;">${item.status || 'BELUM LUNAS'}</span></td>
@@ -862,35 +832,35 @@ window.renderHistory = function(){
         }
     });
 
-    document.getElementById('statOrders').innerText = historyData.length;
-
-    // LOGIC DISPLAY CARDS & LAYOUT
+    // LAYOUT LOGIC
     const chartCard = document.getElementById('chartCard');
     const colRev = document.getElementById('colRevenue');
     const colProf = document.getElementById('colProfit');
     const colOrd = document.getElementById('colOrders');
     const colSearch = document.getElementById('colSearch');
-
     const revenueEl = document.getElementById('statRevenue');
     const profitEl = document.getElementById('statProfit');
+    const ordersEl = document.getElementById('statOrders');
 
     if (isAdmin) {
-        // --- MODE ADMIN ---
+        // ADMIN MODE
         colRev.style.display = 'block';
         colProf.style.display = 'block';
         colOrd.style.display = 'block';
-        colSearch.className = 'col-md-3';
-
+        colSearch.className = 'col-md-3'; // Search kecil
+        
         revenueEl.innerText = rp(totalRevenue);
         profitEl.innerText = rp(totalProfit);
+        ordersEl.innerText = historyData.length;
         chartCard.style.display = 'block'; 
         initChart(chartLabels, chartProfit, chartHPP);
     } else {
-        // --- MODE USER ---
+        // USER MODE
         colRev.style.display = 'none';
         colProf.style.display = 'none';
         colOrd.style.display = 'none';
-        colSearch.className = 'col-12';
+        colSearch.className = 'col-12'; // Search lebar full
+        
         chartCard.style.display = 'none'; 
     }
 }
@@ -901,7 +871,8 @@ window.loadFromHistory = function(invId){
     
     isEditMode = true;
     currentEditingInv = invId; 
-    
+    currentEditingOwnerId = item.userId; // SAVE ORIGINAL OWNER ID
+
     document.getElementById('customer').value = item.cust; 
     document.getElementById('itemName').value = item.item || ''; 
     document.getElementById('invDisplay').innerText = item.inv;
@@ -909,10 +880,8 @@ window.loadFromHistory = function(invId){
     document.getElementById('time').value = item.details.time;
     document.getElementById('support').value = item.details.support; 
     document.getElementById('waste').value = item.details.waste;
-    
     document.getElementById('profit').value = item.details.profit; 
     document.getElementById('risk').value = item.details.risk;
-    
     document.getElementById('discount').value = item.details.discount || 0;
     document.getElementById('taxActive').value = item.details.tax || 0;
     document.getElementById('paymentStatus').value = item.status || 'BELUM LUNAS';
@@ -927,20 +896,17 @@ window.loadFromHistory = function(invId){
     
     updatePriceGram();
     calculate(); 
+
+    const btn = document.querySelector('button[onclick="calculateAndSave()"]');
+    if(btn) btn.innerText = "UPDATE PESANAN";
 }
 
 window.deleteHistory = async function(invId){ 
-    if(confirm(`Hapus invoice ${invId}?`)) {
-        await deleteDoc(doc(db, "orders", invId));
-    }
-};
+    if(confirm(`Hapus invoice ${invId}?`)) await deleteDoc(doc(db, "orders", invId));
+}
 
 window.resetInvCounter = function(){ 
-    if(confirm('Reset nomor invoice ke 0001?')){ 
-        localStorage.setItem('inv_counter', 1); 
-        isEditMode = false;
-        generateInvoiceNum(); 
-    } 
+    if(confirm('Penomoran sekarang menggunakan tanggal & waktu otomatis. Reset tidak diperlukan lagi.')){ } 
 }
 
 window.saveSetup = async function() {
@@ -950,7 +916,6 @@ window.saveSetup = async function() {
     });
     config['profit'] = +document.getElementById('profit').value;
     config['risk'] = +document.getElementById('risk').value;
-
     await setDoc(doc(db, "settings", "config"), config);
     showNotification("Pengaturan Tersimpan!");
 };
