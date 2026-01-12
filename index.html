@@ -11,15 +11,6 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
-<script type="importmap">
-  {
-    "imports": {
-      "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
-      "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
-    }
-  }
-</script>
-
 <style>
 :root { 
     --primary: #10b981; 
@@ -160,31 +151,6 @@ body {
 @keyframes slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
 
 .bg-light-custom { background-color: #f1f5f9 !important; }
-
-/* Styles untuk 3D Viewer */
-#viewer-container {
-    width: 100%;
-    height: 350px;
-    background: #1e293b; /* Dark bg for 3D */
-    border-radius: 12px;
-    position: relative;
-    overflow: hidden;
-    margin-bottom: 1rem;
-    display: none; /* Hidden by default until file uploaded */
-}
-#viewer-loading {
-    position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
-    color: white; display: none;
-}
-.upload-area {
-    border: 2px dashed #cbd5e1;
-    border-radius: 12px;
-    padding: 2rem;
-    text-align: center;
-    cursor: pointer;
-    transition: 0.2s;
-}
-.upload-area:hover { border-color: var(--primary); background: #f0fdf4; }
 </style>
 </head>
 <body>
@@ -210,26 +176,6 @@ body {
         <div class="tab-pane fade show active" id="calc">
             <div class="row">
                 <div class="col-lg-8">
-                    <div class="card mb-3">
-                        <div class="card-body p-4">
-                            <h6 class="fw-bold mb-3 text-uppercase tracking-wider">Upload Model (STL/OBJ)</h6>
-                            <div class="upload-area" id="dropZone" onclick="document.getElementById('file3d').click()">
-                                <span style="font-size: 2rem;">📤</span>
-                                <p class="mb-0 fw-bold text-muted">Klik untuk upload .STL atau .OBJ</p>
-                                <p class="small text-muted mb-0">Auto-calculate Weight & Time (Bambu Lab Profile)</p>
-                                <input type="file" id="file3d" accept=".stl,.obj" hidden>
-                            </div>
-                            
-                            <div id="viewer-container" class="mt-3 shadow-inner">
-                                <div id="viewer-loading">Processing 3D Model...</div>
-                            </div>
-                            
-                            <div id="modelStats" class="mt-2 small text-muted text-center" style="display:none">
-                                <span class="me-3">📐 Volume: <b id="statVol">0</b> cm³</span>
-                                <span>⏲️ Estimasi Bambu: <b class="text-primary">Auto Filled</b></span>
-                            </div>
-                        </div>
-                    </div>
                     <div class="card"><div class="card-body p-4">
                         <h6 class="fw-bold mb-4 text-uppercase tracking-wider">Identitas Pesanan</h6>
                         <div class="row g-3">
@@ -422,10 +368,6 @@ body {
 // --- FIREBASE SETUP ---
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
 import { getFirestore, doc, setDoc, collection, onSnapshot, deleteDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
-// --- THREE JS IMPORTS FOR 3D VIEWER ---
-import * as THREE from 'three';
-import { STLLoader } from 'three/addons/loaders/STLLoader.js';
-import { OBJLoader } from 'three/addons/loaders/OBJLoader.js';
 
 const firebaseConfig = {
     apiKey: "AIzaSyD3pKjssC6NRKXDfhHsr65al9maZto2IgQ",
@@ -443,15 +385,11 @@ const db = getFirestore(app);
 // --- GLOBAL STATE ---
 let materialsData = [];
 let historyData = [];
-let editIndex = -1; 
+let editIndex = -1; // For materials only
 let isEditMode = false;
-let currentEditingInv = ""; 
+let currentEditingInv = ""; // Keeps track of ID being edited
 let lastCalculatedData = {};
 let performanceChart = null;
-
-// --- 3D VIEWER VARIABLES ---
-let scene, camera, renderer, mesh, controls;
-const viewerContainer = document.getElementById('viewer-container');
 
 // --- UTILITY ---
 const rp = n => 'Rp ' + (Math.round(n) || 0).toLocaleString('id-ID');
@@ -463,20 +401,27 @@ window.showNotification = function() {
 }
 
 // --- REALTIME LISTENERS (CRUD: READ) ---
+
+// 1. Sync Materials
 onSnapshot(collection(db, "materials"), (snapshot) => {
     materialsData = [];
     snapshot.forEach(doc => {
+        // We use doc.id as the name, and data contains name & price
         materialsData.push(doc.data());
     });
+    // Simpan ke localstorage sebagai cache agar performa cepat
     localStorage.setItem('materials', JSON.stringify(materialsData));
     renderInventory();
 });
 
+// 2. Sync Orders (History)
 onSnapshot(collection(db, "orders"), (snapshot) => {
     historyData = [];
     snapshot.forEach(doc => historyData.push(doc.data()));
+    // Sort desc by Invoice ID
     historyData.sort((a, b) => b.inv.localeCompare(a.inv));
     
+    // Find highest invoice number for next generation
     let maxNum = 0;
     historyData.forEach(o => {
         const parts = o.inv.split('-');
@@ -489,9 +434,14 @@ onSnapshot(collection(db, "orders"), (snapshot) => {
 
     localStorage.setItem('order_history', JSON.stringify(historyData));
     renderHistory();
-    if(!isEditMode) { generateInvoiceNum(); }
+    
+    // Jika sedang tidak mode edit, update display invoice number
+    if(!isEditMode) {
+        generateInvoiceNum(); 
+    }
 });
 
+// 3. Sync Settings
 onSnapshot(doc(db, "settings", "config"), (docSnap) => {
     if (docSnap.exists()) {
         const data = docSnap.data();
@@ -503,11 +453,13 @@ onSnapshot(doc(db, "settings", "config"), (docSnap) => {
     }
 });
 
-// --- INVENTORY FUNCTIONS ---
+// --- INVENTORY FUNCTIONS (CRUD: CREATE, UPDATE, DELETE) ---
+
 window.renderInventory = function(){
     const list = document.getElementById('materialList'); 
     list.innerHTML = '';
     materialsData.forEach((m) => {
+        // Kita gunakan m.name sebagai ID unik
         list.innerHTML += `
         <div class="list-group-item d-flex justify-content-between align-items-center py-3 border-0 border-bottom bg-transparent">
             <div>
@@ -541,6 +493,7 @@ window.updatePriceGram = function(){
 }
 document.getElementById('materialSelect').addEventListener('change', window.updatePriceGram);
 
+// Create / Update Material
 window.saveMaterial = async function() {
     const nameEl = document.getElementById('matName');
     const priceEl = document.getElementById('matPrice');
@@ -551,12 +504,16 @@ window.saveMaterial = async function() {
 
     if(!name || price <= 0) return alert('Data tidak valid!');
 
+    // Jika sedang mode edit dan nama berubah, kita perlu hapus dokumen lama dan buat baru
     if (editIndex !== -1 && editIndex !== name) {
+        // Hapus material lama (editIndex menyimpan nama lama)
         await deleteDoc(doc(db, "materials", editIndex));
     }
 
+    // Save/Overwrite (Create/Update)
     await setDoc(doc(db, "materials", name), { name, price });
 
+    // Reset UI
     nameEl.value = ''; priceEl.value = '';
     editIndex = -1;
     btn.innerText = 'Simpan';
@@ -567,7 +524,7 @@ window.editMaterial = function(name){
     if(item) {
         document.getElementById('matName').value = item.name;
         document.getElementById('matPrice').value = item.price;
-        editIndex = name; 
+        editIndex = name; // Store original name as ID
         document.getElementById('btnSaveMat').innerText = 'Update';
         document.getElementById('matName').focus();
     }
@@ -579,9 +536,11 @@ window.deleteMaterial = async function(name){
     } 
 }
 
-// --- CALCULATOR & ORDERS ---
+// --- CALCULATOR & ORDERS (CRUD: CREATE, UPDATE) ---
+
 window.generateInvoiceNum = function(){
     if(isEditMode && currentEditingInv) return currentEditingInv;
+
     const y = new Date().getFullYear();
     let lastNum = parseInt(localStorage.getItem('inv_counter') || 1);
     const inv = `INV-${y}-${String(lastNum).padStart(4, '0')}`;
@@ -591,29 +550,31 @@ window.generateInvoiceNum = function(){
 
 window.calculateAndSave = async function() {
     const weightVal = +document.getElementById('weight').value || 0;
-    if(weightVal <= 0) return alert("Berat harus diisi atau Upload Model 3D!");
+    if(weightVal <= 0) return alert("Berat harus diisi!");
     
+    // 1. Lakukan Kalkulasi
     const resultObj = calculate();
+
+    // 2. Simpan ke Firebase (Create / Update)
+    // Gunakan setDoc agar ID invoice tetap konsisten
     await setDoc(doc(db, "orders", resultObj.inv), resultObj);
+
     showNotification();
 
+    // 3. Reset Form jika bukan mode edit
     if (!isEditMode) {
+        // Naikkan counter lokal sementara agar UI responsif sebelum sync
         localStorage.setItem('inv_counter', parseInt(localStorage.getItem('inv_counter') || 1) + 1);
-        generateInvoiceNum(); 
+        generateInvoiceNum(); // Generate new number
+        
         document.getElementById('customer').value = '';
         document.getElementById('itemName').value = '';
         document.getElementById('weight').value = '';
-        // Reset 3D Viewer if exists
-        if(scene) {
-             while(scene.children.length > 0){ 
-                scene.remove(scene.children[0]); 
-             }
-             document.getElementById('viewer-container').style.display = 'none';
-        }
     } else {
+        // Jika mode edit, keluar mode edit setelah save
         isEditMode = false;
         currentEditingInv = "";
-        generateInvoiceNum();
+        generateInvoiceNum(); // Kembali ke nomor baru
     }
 }
 
@@ -671,6 +632,7 @@ function calculate(){
         netProfit: netProfit
     };
 
+    // Return data object untuk disimpan ke DB
     return {
         inv: currentInv, 
         cust: custName, 
@@ -679,7 +641,7 @@ function calculate(){
         status: payStatus,
         hpp: hpp, 
         netProfit: netProfit,
-        timestamp: Date.now(), 
+        timestamp: Date.now(), // Tambahan untuk sorting jika perlu
         details: { 
             weight: weightVal, time: timeVal, support: supportVal, waste: wasteVal, 
             profit: profitVal, risk: riskVal, discount: discPercent, tax: taxPercent,
@@ -688,7 +650,8 @@ function calculate(){
     };
 }
 
-// --- HISTORY FUNCTIONS ---
+// --- HISTORY FUNCTIONS (CRUD: READ, DELETE, PREPARE UPDATE) ---
+
 window.renderHistory = function(){
     const list = document.getElementById('historyList'); 
     const searchTerm = document.getElementById('historySearch').value.toLowerCase();
@@ -697,6 +660,7 @@ window.renderHistory = function(){
     let totalRevenue = 0, totalProfit = 0;
     const chartLabels = [], chartProfit = [], chartHPP = [];
 
+    // Chart Data (Last 7)
     historyData.slice(0, 7).reverse().forEach(item => {
         chartLabels.push(item.inv.split('-').pop()); 
         chartProfit.push(item.netProfit || 0);
@@ -738,7 +702,7 @@ window.loadFromHistory = function(invId){
     if(!item) return;
     
     isEditMode = true;
-    currentEditingInv = invId; 
+    currentEditingInv = invId; // Set current editing ID
     
     document.getElementById('customer').value = item.cust; 
     document.getElementById('itemName').value = item.item || ''; 
@@ -758,13 +722,14 @@ window.loadFromHistory = function(invId){
         if(opt.text === item.details.matName) { materialSelect.value = opt.value; break; }
     }
     
+    // Trigger tab switch
     const calcTabBtn = document.querySelector('[data-bs-target="#calc"]');
     if(calcTabBtn) {
         new bootstrap.Tab(calcTabBtn).show();
     }
     
     updatePriceGram();
-    calculate(); 
+    calculate(); // Recalculate visually
 }
 
 window.deleteHistory = async function(invId){ 
@@ -781,11 +746,13 @@ window.resetInvCounter = function(){
     } 
 }
 
+// --- SETUP SYNC (UPDATE CONFIG) ---
 const syncSetup = async () => {
     const config = {};
     ['depr', 'operator', 'watt', 'kwh', 'maint'].forEach(id => {
         config[id] = +document.getElementById(id).value;
     });
+    // Save to Firestore
     await setDoc(doc(db, "settings", "config"), config);
 };
 ['depr', 'operator', 'watt', 'kwh', 'maint'].forEach(id => {
@@ -793,6 +760,7 @@ const syncSetup = async () => {
     if(el) el.addEventListener('change', syncSetup);
 });
 
+// --- CHART & PDF ---
 function initChart(labels, profitData, hppData) {
     const ctx = document.getElementById('performanceChart').getContext('2d');
     if (performanceChart) performanceChart.destroy();
@@ -819,8 +787,11 @@ function initChart(labels, profitData, hppData) {
 window.exportPDF = function(){
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF('p', 'mm', 'a4');
+    
+    // Recalculate current view data
     calculate();
     const data = lastCalculatedData;
+    
     if(!data.inv) return alert("Silahkan Hitung & Simpan data terlebih dahulu!");
 
     doc.setFontSize(16);
@@ -830,166 +801,11 @@ window.exportPDF = function(){
     doc.text("Customer: " + (document.getElementById('customer').value || "Pelanggan"), 15, 40);
     doc.text("Total: " + rp(data.total), 15, 50);
     doc.text("Status: " + data.status, 15, 60);
+    
     doc.save(`${data.inv}.pdf`);
 }
 
-// -----------------------------------------------------
-// --- 3D VIEWER LOGIC & AUTO CALCULATE (Bambu Lab) ---
-// -----------------------------------------------------
-
-function init3DViewer() {
-    scene = new THREE.Scene();
-    scene.background = new THREE.Color(0x1e293b);
-    
-    // Light
-    const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
-    scene.add(ambientLight);
-    const dirLight = new THREE.DirectionalLight(0xffffff, 0.8);
-    dirLight.position.set(0, 10, 10);
-    scene.add(dirLight);
-
-    camera = new THREE.PerspectiveCamera(45, viewerContainer.clientWidth / viewerContainer.clientHeight, 0.1, 1000);
-    camera.position.set(0, 50, 100);
-
-    renderer = new THREE.WebGLRenderer({ antialias: true });
-    renderer.setSize(viewerContainer.clientWidth, viewerContainer.clientHeight);
-    viewerContainer.appendChild(renderer.domElement);
-
-    animate();
-}
-
-function animate() {
-    requestAnimationFrame(animate);
-    if(mesh) {
-        mesh.rotation.y += 0.005; // Rotasi otomatis perlahan
-    }
-    renderer.render(scene, camera);
-}
-
-function getVolume(geometry) {
-    if (!geometry.isBufferGeometry) {
-        console.warn("'geometry' must be an indexed or non-indexed BufferGeometry");
-        return 0;
-    }
-    let isIndexed = geometry.index !== null;
-    let position = geometry.attributes.position;
-    let sum = 0;
-    let p1 = new THREE.Vector3(), p2 = new THREE.Vector3(), p3 = new THREE.Vector3();
-
-    if (!isIndexed) {
-        let faces = position.count / 3;
-        for (let i = 0; i < faces; i++) {
-            p1.fromBufferAttribute(position, i * 3 + 0);
-            p2.fromBufferAttribute(position, i * 3 + 1);
-            p3.fromBufferAttribute(position, i * 3 + 2);
-            sum += signedVolumeOfTriangle(p1, p2, p3);
-        }
-    } else {
-        let index = geometry.index;
-        let faces = index.count / 3;
-        for (let i = 0; i < faces; i++) {
-            p1.fromBufferAttribute(position, index.getX(i * 3 + 0));
-            p2.fromBufferAttribute(position, index.getX(i * 3 + 1));
-            p3.fromBufferAttribute(position, index.getX(i * 3 + 2));
-            sum += signedVolumeOfTriangle(p1, p2, p3);
-        }
-    }
-    return Math.abs(sum);
-}
-
-function signedVolumeOfTriangle(p1, p2, p3) {
-    return p1.dot(p2.cross(p3)) / 6.0;
-}
-
-document.getElementById('file3d').addEventListener('change', function(e){
-    const file = e.target.files[0];
-    if(!file) return;
-
-    // Reset UI
-    document.getElementById('dropZone').style.display = 'none';
-    viewerContainer.style.display = 'block';
-    const loading = document.getElementById('viewer-loading');
-    loading.style.display = 'block';
-
-    if(!scene) init3DViewer();
-    // Clear old mesh
-    if(mesh) { scene.remove(mesh); mesh = null; }
-
-    const url = URL.createObjectURL(file);
-    const ext = file.name.split('.').pop().toLowerCase();
-
-    const onLoad = (object) => {
-        if(ext === 'obj') {
-            // OBJLoader returns a Group, we need to find the mesh inside
-            object.traverse(function(child){
-                if(child.isMesh) mesh = child;
-            });
-        } else {
-            // STL returns Geometry, we create Mesh
-            const material = new THREE.MeshPhongMaterial({ color: 0x10b981, specular: 0x111111, shininess: 200 });
-            mesh = new THREE.Mesh(object, material);
-        }
-
-        // Center Geometry
-        mesh.geometry.computeBoundingBox();
-        const center = mesh.geometry.boundingBox.getCenter(new THREE.Vector3());
-        mesh.geometry.translate(-center.x, -center.y, -center.z); // Center at 0,0,0
-        
-        // Scale Camera to fit
-        const size = mesh.geometry.boundingBox.getSize(new THREE.Vector3());
-        const maxDim = Math.max(size.x, size.y, size.z);
-        camera.position.z = maxDim * 2.5; 
-        camera.position.y = maxDim * 0.5;
-        camera.lookAt(0,0,0);
-
-        scene.add(mesh);
-        loading.style.display = 'none';
-        
-        // --- AUTO CALCULATION LOGIC ---
-        // 1. Hitung Volume (cm3) -> convert dari mm3 ke cm3 (dibagi 1000)
-        // Unit STL biasanya mm.
-        const volMm3 = getVolume(mesh.geometry);
-        const volCm3 = volMm3 / 1000;
-        
-        // 2. Hitung Berat (Gram) -> Densitas PLA default ~1.24 g/cm3
-        const density = 1.24;
-        const weight = volCm3 * density;
-        
-        // 3. Estimasi Waktu (Bambu Lab Heuristic)
-        // Bambu Lab P1/X1 sangat cepat. Estimasi kasar:
-        // ~1.2 sampai 1.5 menit per gram untuk model standar + 8 menit persiapan/kalibrasi
-        // Ini adalah pendekatan heuristik karena browser tidak bisa slicing G-code.
-        const minutesPerGram = 1.3; 
-        const startupTime = 8; 
-        const totalMinutes = Math.round((weight * minutesPerGram) + startupTime);
-        
-        // Convert menit ke HH:MM
-        const h = Math.floor(totalMinutes / 60);
-        const m = totalMinutes % 60;
-        const timeString = `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}`;
-
-        // Update UI Inputs
-        document.getElementById('weight').value = Math.round(weight);
-        document.getElementById('time').value = timeString;
-        document.getElementById('itemName').value = file.name;
-        
-        // Update Stats Display
-        document.getElementById('modelStats').style.display = 'block';
-        document.getElementById('statVol').innerText = volCm3.toFixed(2);
-    };
-
-    if(ext === 'stl') {
-        new STLLoader().load(url, onLoad);
-    } else if (ext === 'obj') {
-        new OBJLoader().load(url, onLoad);
-    } else {
-        alert("Format file harus .stl atau .obj");
-        document.getElementById('dropZone').style.display = 'block';
-        viewerContainer.style.display = 'none';
-    }
-});
-
-// Initial Render
+// Start
 renderInventory();
 renderHistory();
 generateInvoiceNum();
