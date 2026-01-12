@@ -152,12 +152,14 @@ body {
 
 .bg-light-custom { background-color: #f1f5f9 !important; }
 
-/* Hide Admin Tabs by default */
+/* Hide Admin Tabs/Elements by default */
 .admin-only { display: none !important; }
 .is-admin .admin-only { display: block !important; }
 </style>
 </head>
-<body class=""> <div id="studio-toast">Data Berhasil Disimpan! ✅</div>
+<body class="">
+
+<div id="studio-toast">Notifikasi</div>
     
 <div class="app-container px-3">
     <div class="d-flex justify-content-between align-items-center mb-4">
@@ -165,7 +167,10 @@ body {
             <h2 class="fw-800 m-0" style="letter-spacing: -1px;">Simpang<span style="color:var(--primary)">Studio.</span></h2>
             <p class="text-muted small m-0">Professional 3D Printing Business Manager</p>
         </div>
-        <button id="btnLogin" class="btn btn-outline-dark btn-sm fw-bold" onclick="toggleLogin()">🔒 Login Admin</button>
+        <div class="d-flex align-items-center gap-2">
+            <span id="userEmailDisplay" class="small fw-bold text-muted d-none d-md-block"></span>
+            <button id="authBtn" class="btn btn-outline-dark btn-sm fw-bold" onclick="showAuthModal('login')">🔒 Login / Sign Up</button>
+        </div>
     </div>
 
     <ul class="nav nav-pills mb-4 justify-content-center" id="mainTabs">
@@ -234,17 +239,18 @@ body {
                     <div class="card"><div class="card-body p-4">
                         <h6 class="fw-bold mb-3 text-uppercase tracking-wider">Adjustment</h6>
                         <div class="row g-2">
-                            <div class="col-6 mb-3">
+                            <div class="col-6 mb-3 admin-only">
                                 <label class="form-label text-danger">Diskon (%)</label>
                                 <input type="number" class="form-control border-danger" id="discount" value="0">
                             </div>
-                            <div class="col-6 mb-3">
+                            <div class="col-6 mb-3 admin-only">
                                 <label class="form-label text-primary">Pajak (PPN)</label>
                                 <select id="taxActive" class="form-select border-primary">
                                     <option value="0">Tanpa PPN</option>
                                     <option value="11">PPN 11%</option>
                                 </select>
                             </div>
+                            
                             <div class="col-12 mb-3">
                                 <label class="form-label fw-bold">Status Pembayaran</label>
                                 <select id="paymentStatus" class="form-select border-success fw-bold text-success">
@@ -253,8 +259,11 @@ body {
                                 </select>
                             </div>
                         </div>
+                        
                         <button class="btn btn-primary-studio w-100 text-white mb-2 shadow-sm" onclick="calculateAndSave()">HITUNG & SIMPAN</button>
-                        <button class="btn btn-dark w-100 border-0 py-2 fw-bold" onclick="exportPDF()">📄 CETAK INVOICE</button>
+                        
+                        <button class="btn btn-dark w-100 border-0 py-2 fw-bold admin-only" onclick="exportPDF()">📄 CETAK INVOICE</button>
+                        
                         <div class="mt-3 text-center border-top pt-2">
                             <span class="text-muted small">No. Terakhir: </span><span id="invDisplay" class="fw-bold small">-</span>
                         </div>
@@ -265,39 +274,42 @@ body {
 
         <div class="tab-pane fade" id="history">
             <div class="row g-3 mb-4">
-                <div class="col-md-3">
+                <div class="col-md-3" id="colRevenue" style="display:none">
                     <div class="stat-card-new shadow-sm">
                         <div class="stat-icon bg-success bg-opacity-10 text-success">💰</div>
                         <small class="text-muted fw-600 d-block mb-1">Total Omzet</small>
-                        <h4 class="fw-800 m-0" id="statRevenue" style="color: var(--primary)">Rp 0</h4>
+                        <h4 class="fw-800 m-0" id="statRevenue" style="color: var(--primary)">-</h4>
                     </div>
                 </div>
-                <div class="col-md-3">
+                <div class="col-md-3" id="colProfit" style="display:none">
                     <div class="stat-card-new shadow-sm">
                         <div class="stat-icon bg-info bg-opacity-10 text-info">📈</div>
                         <small class="text-muted fw-600 d-block mb-1">Total Profit</small>
-                        <h4 class="fw-800 m-0 text-info" id="statProfit">Rp 0</h4>
+                        <h4 class="fw-800 m-0 text-info" id="statProfit">-</h4>
                     </div>
                 </div>
-                <div class="col-md-3">
+                <div class="col-md-3" id="colOrders" style="display:none">
                     <div class="stat-card-new shadow-sm">
                         <div class="stat-icon bg-primary bg-opacity-10 text-primary">📦</div>
                         <small class="text-muted fw-600 d-block mb-1">Total Pesanan</small>
                         <h4 class="fw-800 m-0 text-primary" id="statOrders">0</h4>
                     </div>
                 </div>
-                <div class="col-md-3">
+                
+                <div class="col-12" id="colSearch"> 
                     <div class="stat-card-new shadow-sm">
-                        <div class="stat-icon bg-warning bg-opacity-10 text-warning">🔍</div>
-                        <small class="text-muted fw-600 d-block mb-1">Cari Data</small>
+                        <div class="d-flex align-items-center mb-2">
+                            <div class="stat-icon bg-warning bg-opacity-10 text-warning me-2" style="width:30px; height:30px; font-size:1rem;">🔍</div>
+                            <small class="text-muted fw-600">Cari Data</small>
+                        </div>
                         <div class="search-box-wrapper">
-                            <input type="text" id="historySearch" class="form-control form-control-sm" placeholder="Nama/Item/Invoice..." onkeyup="renderHistory()">
+                            <input type="text" id="historySearch" class="form-control" placeholder="Ketik Nama Pelanggan, Item, atau No. Invoice..." onkeyup="renderHistory()">
                         </div>
                     </div>
                 </div>
             </div>
 
-            <div class="card mb-4">
+            <div class="card mb-4" id="chartCard" style="display:none">
                 <div class="card-body">
                     <h6 class="fw-bold mb-3 text-uppercase tracking-wider">Performance Analytics (Profit vs Modal)</h6>
                     <div class="chart-container">
@@ -342,7 +354,6 @@ body {
 
         <div class="tab-pane fade" id="setup">
             <div class="card"><div class="card-body p-4">
-                
                 <h5 class="fw-bold mb-4 text-success">Global Margin Settings</h5>
                 <div class="row g-3 mb-4 border-bottom pb-4">
                      <div class="col-6">
@@ -370,17 +381,44 @@ body {
 
                 <div class="mt-4 pt-3 border-top d-flex justify-content-between align-items-center">
                     <button class="btn btn-outline-warning btn-sm fw-bold" onclick="resetInvCounter()">Reset Penomoran Invoice</button>
-                    <span class="text-muted small">Simpang Studio Engine v4.1 Auth Enabled</span>
+                    <span class="text-muted small">Simpang Studio Engine v4.6 Multi-User</span>
                 </div>
             </div></div>
         </div>
     </div>
 </div>
 
+<div class="modal fade" id="authModal" tabindex="-1">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content rounded-4 border-0 shadow">
+      <div class="modal-body p-4">
+        <h4 class="fw-800 text-center mb-2" id="authTitle">Login Akun</h4>
+        <p class="text-center text-muted small mb-4" id="authSubtitle">Masuk untuk menyimpan riwayat pesanan.</p>
+        
+        <div class="mb-3">
+            <label class="form-label">Email</label>
+            <input type="email" id="authEmail" class="form-control" placeholder="nama@email.com">
+        </div>
+        <div class="mb-4">
+            <label class="form-label">Password</label>
+            <input type="password" id="authPass" class="form-control" placeholder="••••••••">
+        </div>
+        
+        <button class="btn btn-primary-studio w-100 text-white mb-3" onclick="handleAuthAction()" id="authSubmitBtn">MASUK</button>
+        
+        <div class="text-center pt-2 border-top">
+            <small class="text-muted" id="authToggleText">Belum punya akun? <a href="#" onclick="toggleAuthMode()" class="fw-bold text-primary text-decoration-none">Daftar Sekarang</a></small>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
 <script type="module">
 // --- FIREBASE SETUP ---
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-import { getFirestore, doc, setDoc, collection, onSnapshot, deleteDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+import { getFirestore, doc, setDoc, collection, onSnapshot, deleteDoc, query, where } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
 const firebaseConfig = {
     apiKey: "AIzaSyD3pKjssC6NRKXDfhHsr65al9maZto2IgQ",
@@ -394,6 +432,7 @@ const firebaseConfig = {
 
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
+const auth = getAuth(app); 
 
 // --- GLOBAL STATE ---
 let materialsData = [];
@@ -403,36 +442,173 @@ let isEditMode = false;
 let currentEditingInv = ""; 
 let lastCalculatedData = {};
 let performanceChart = null;
-let isAdmin = false; // State Login
+let isAdmin = false; 
+let currentUser = null; // Store current logged in user
+let unsubscribeOrders = null; // To stop listener on logout
+let isRegisterMode = false; // Toggle Login/Register
 
-// --- LOGIN LOGIC ---
-window.toggleLogin = function() {
-    if (isAdmin) {
-        // Logout
-        isAdmin = false;
-        document.body.classList.remove('is-admin');
-        document.getElementById('btnLogin').innerHTML = "🔒 Login Admin";
-        document.getElementById('btnLogin').classList.remove('btn-danger');
-        document.getElementById('btnLogin').classList.add('btn-outline-dark');
+// --- AUTH & LISTENER LOGIC ---
+
+onAuthStateChanged(auth, (user) => {
+    const authBtn = document.getElementById('authBtn');
+    const userDisplay = document.getElementById('userEmailDisplay');
+    
+    currentUser = user; // Update Global User State
+
+    if (user) {
+        // --- LOGGED IN ---
+        userDisplay.innerText = user.email;
         
-        // Pindah ke tab Kalkulator jika sedang di tab admin
-        const calcTabBtn = document.querySelector('[data-bs-target="#calc"]');
-        new bootstrap.Tab(calcTabBtn).show();
-        
-        alert("Anda telah Logout.");
-    } else {
-        // Login Logic
-        const pass = prompt("Masukkan Password Admin:");
-        if (pass === "admin123") { // PASSWORD DEFAULT
+        // Cek apakah Admin (Hardcoded Security)
+        // Di aplikasi real, gunakan Custom Claims atau Database Roles
+        if(user.email === 'admin@simpang.com') {
             isAdmin = true;
             document.body.classList.add('is-admin');
-            document.getElementById('btnLogin').innerHTML = "🔓 Logout";
-            document.getElementById('btnLogin').classList.remove('btn-outline-dark');
-            document.getElementById('btnLogin').classList.add('btn-danger');
-            showNotification("Login Berhasil! Akses dibuka.");
-        } else if (pass !== null) {
-            alert("Password Salah!");
+        } else {
+            isAdmin = false;
+            document.body.classList.remove('is-admin');
         }
+
+        authBtn.innerHTML = "🔓 Logout";
+        authBtn.classList.replace('btn-outline-dark', 'btn-danger');
+        authBtn.onclick = doFirebaseLogout; 
+        
+        // Setup Listener Database sesuai Role
+        setupOrderListener(user);
+
+    } else {
+        // --- LOGGED OUT ---
+        userDisplay.innerText = "";
+        isAdmin = false;
+        document.body.classList.remove('is-admin');
+        authBtn.innerHTML = "🔒 Login / Sign Up";
+        authBtn.classList.replace('btn-danger', 'btn-outline-dark');
+        authBtn.onclick = () => showAuthModal('login'); 
+
+        // Reset Sensitive Fields
+        document.getElementById('discount').value = 0;
+        document.getElementById('taxActive').value = 0;
+        calculate(); 
+
+        // Hentikan listener lama & kosongkan data
+        if(unsubscribeOrders) unsubscribeOrders();
+        historyData = [];
+        renderHistory();
+
+        // Kick dari tab admin
+        const activeTab = document.querySelector('.nav-link.active');
+        if (activeTab) {
+            const target = activeTab.getAttribute('data-bs-target');
+            if (target === '#inventory' || target === '#setup') {
+                 const calcTabBtn = document.querySelector('[data-bs-target="#calc"]');
+                 new bootstrap.Tab(calcTabBtn).show();
+            }
+        }
+    }
+});
+
+// --- REALTIME DATA LISTENER (ISOLATION LOGIC) ---
+function setupOrderListener(user) {
+    // Matikan listener sebelumnya jika ada (agar tidak double)
+    if(unsubscribeOrders) unsubscribeOrders();
+
+    let q;
+    if(isAdmin) {
+        // Admin: Lihat SEMUA pesanan
+        q = collection(db, "orders");
+    } else {
+        // User Biasa: Hanya lihat pesanan DENGAN userId MILIKNYA
+        q = query(collection(db, "orders"), where("userId", "==", user.uid));
+    }
+
+    unsubscribeOrders = onSnapshot(q, (snapshot) => {
+        historyData = [];
+        snapshot.forEach(doc => historyData.push(doc.data()));
+        
+        // Sorting
+        historyData.sort((a, b) => b.inv.localeCompare(a.inv));
+        
+        // Auto Counter Invoice
+        let maxNum = 0;
+        historyData.forEach(o => {
+            const parts = o.inv.split('-');
+            if(parts.length === 3) {
+                const num = parseInt(parts[2]);
+                if(num > maxNum) maxNum = num;
+            }
+        });
+        localStorage.setItem('inv_counter', maxNum + 1);
+        
+        renderHistory();
+        if(!isEditMode) generateInvoiceNum();
+    });
+}
+
+// --- AUTH UI FUNCTIONS ---
+window.showAuthModal = function(mode) {
+    isRegisterMode = (mode === 'register');
+    updateAuthModalUI();
+    new bootstrap.Modal(document.getElementById('authModal')).show();
+}
+
+window.toggleAuthMode = function() {
+    isRegisterMode = !isRegisterMode;
+    updateAuthModalUI();
+}
+
+function updateAuthModalUI() {
+    const title = document.getElementById('authTitle');
+    const sub = document.getElementById('authSubtitle');
+    const btn = document.getElementById('authSubmitBtn');
+    const toggle = document.getElementById('authToggleText');
+
+    if (isRegisterMode) {
+        title.innerText = "Daftar Akun Baru";
+        sub.innerText = "Buat akun untuk mulai menyimpan pesanan.";
+        btn.innerText = "DAFTAR SEKARANG";
+        toggle.innerHTML = `Sudah punya akun? <a href="#" onclick="toggleAuthMode()" class="fw-bold text-primary text-decoration-none">Login disini</a>`;
+    } else {
+        title.innerText = "Login Akun";
+        sub.innerText = "Masuk untuk mengakses riwayat pesanan.";
+        btn.innerText = "MASUK";
+        toggle.innerHTML = `Belum punya akun? <a href="#" onclick="toggleAuthMode()" class="fw-bold text-primary text-decoration-none">Daftar Sekarang</a>`;
+    }
+}
+
+window.handleAuthAction = function() {
+    const email = document.getElementById('authEmail').value;
+    const pass = document.getElementById('authPass').value;
+
+    if(!email || !pass) return alert("Mohon isi email dan password.");
+
+    if (isRegisterMode) {
+        // REGISTER FLOW
+        createUserWithEmailAndPassword(auth, email, pass)
+            .then((userCredential) => {
+                bootstrap.Modal.getInstance(document.getElementById('authModal')).hide();
+                showNotification("Akun Berhasil Dibuat! ✅");
+            })
+            .catch((error) => {
+                alert("Gagal Daftar: " + error.message);
+            });
+    } else {
+        // LOGIN FLOW
+        signInWithEmailAndPassword(auth, email, pass)
+            .then((userCredential) => {
+                bootstrap.Modal.getInstance(document.getElementById('authModal')).hide();
+                showNotification("Login Berhasil! 👋");
+            })
+            .catch((error) => {
+                alert("Gagal Login: " + error.message);
+            });
+    }
+}
+
+window.doFirebaseLogout = function() {
+    if(confirm("Yakin ingin logout?")) {
+        signOut(auth).then(() => {
+            showNotification("Anda telah Logout.");
+        });
     }
 }
 
@@ -446,9 +622,8 @@ window.showNotification = function(msg = "Data Berhasil Disimpan! ✅") {
     setTimeout(() => { toast.style.display = 'none'; }, 3000);
 }
 
-// --- REALTIME LISTENERS ---
+// --- OTHER LISTENERS (Materials & Settings) ---
 
-// 1. Sync Materials
 onSnapshot(collection(db, "materials"), (snapshot) => {
     materialsData = [];
     snapshot.forEach(doc => materialsData.push(doc.data()));
@@ -456,38 +631,14 @@ onSnapshot(collection(db, "materials"), (snapshot) => {
     renderInventory();
 });
 
-// 2. Sync Orders
-onSnapshot(collection(db, "orders"), (snapshot) => {
-    historyData = [];
-    snapshot.forEach(doc => historyData.push(doc.data()));
-    historyData.sort((a, b) => b.inv.localeCompare(a.inv));
-    
-    let maxNum = 0;
-    historyData.forEach(o => {
-        const parts = o.inv.split('-');
-        if(parts.length === 3) {
-            const num = parseInt(parts[2]);
-            if(num > maxNum) maxNum = num;
-        }
-    });
-    localStorage.setItem('inv_counter', maxNum + 1);
-    renderHistory();
-    if(!isEditMode) generateInvoiceNum();
-});
-
-// 3. Sync Settings (Termasuk Profit & Risk sekarang)
 onSnapshot(doc(db, "settings", "config"), (docSnap) => {
     if (docSnap.exists()) {
         const data = docSnap.data();
         localStorage.setItem('setup_3d', JSON.stringify(data));
-        
-        // Load biaya operasional
         ['depr', 'operator', 'watt', 'kwh', 'maint'].forEach(key => {
             const el = document.getElementById(key);
             if (el && data[key]) el.value = data[key];
         });
-
-        // Load Profit & Risk ke input Setup
         if(data.profit) document.getElementById('profit').value = data.profit;
         if(data.risk) document.getElementById('risk').value = data.risk;
     }
@@ -535,14 +686,11 @@ window.saveMaterial = async function() {
     const nameEl = document.getElementById('matName');
     const priceEl = document.getElementById('matPrice');
     const btn = document.getElementById('btnSaveMat');
-    
     const name = nameEl.value.trim();
     const price = Number(priceEl.value);
 
     if(!name || price <= 0) return alert('Data tidak valid!');
-    if (editIndex !== -1 && editIndex !== name) {
-        await deleteDoc(doc(db, "materials", editIndex));
-    }
+    if (editIndex !== -1 && editIndex !== name) await deleteDoc(doc(db, "materials", editIndex));
     await setDoc(doc(db, "materials", name), { name, price });
     nameEl.value = ''; priceEl.value = '';
     editIndex = -1;
@@ -561,9 +709,7 @@ window.editMaterial = function(name){
 }
 
 window.deleteMaterial = async function(name){ 
-    if(confirm(`Hapus material ${name}?`)){ 
-        await deleteDoc(doc(db, "materials", name));
-    } 
+    if(confirm(`Hapus material ${name}?`)) await deleteDoc(doc(db, "materials", name));
 }
 
 // --- CALCULATOR & ORDERS ---
@@ -578,10 +724,22 @@ window.generateInvoiceNum = function(){
 }
 
 window.calculateAndSave = async function() {
+    // 1. CEK LOGIN TERLEBIH DAHULU
+    if(!currentUser) {
+        alert("Silahkan Login atau Daftar Akun terlebih dahulu untuk menyimpan pesanan.");
+        showAuthModal('login');
+        return;
+    }
+
     const weightVal = +document.getElementById('weight').value || 0;
     if(weightVal <= 0) return alert("Berat harus diisi!");
     
     const resultObj = calculate();
+    
+    // 2. TAMBAHKAN USER ID KE DATA PESANAN
+    resultObj.userId = currentUser.uid; // ID Unik User
+    resultObj.userEmail = currentUser.email; // Email User (opsional, utk admin)
+
     await setDoc(doc(db, "orders", resultObj.inv), resultObj);
 
     showNotification("Pesanan Disimpan!");
@@ -617,8 +775,6 @@ function calculate(){
     
     const hpp = matCost + opCost;
     
-    // AMBIL PROFIT DAN RISK DARI SETUP (Element ID tetap sama tapi lokasi di HTML beda)
-    // Karena ID unik, getElementById tetap menemukannya walau di tab tersembunyi
     const profitVal = +document.getElementById('profit').value || 30;
     const riskVal = +document.getElementById('risk').value || 10;
     
@@ -641,7 +797,6 @@ function calculate(){
     const custName = document.getElementById('customer').value;
     const itemName = document.getElementById('itemName').value;
     const payStatus = document.getElementById('paymentStatus').value;
-    
     const matNameText = document.getElementById('materialSelect').options[document.getElementById('materialSelect').selectedIndex]?.text;
 
     lastCalculatedData = {
@@ -660,7 +815,7 @@ function calculate(){
     };
 }
 
-// --- HISTORY ---
+// --- HISTORY RENDER ---
 window.renderHistory = function(){
     const list = document.getElementById('historyList'); 
     const searchTerm = document.getElementById('historySearch').value.toLowerCase();
@@ -669,6 +824,14 @@ window.renderHistory = function(){
     let totalRevenue = 0, totalProfit = 0;
     const chartLabels = [], chartProfit = [], chartHPP = [];
 
+    // Jika tidak login, historyData akan kosong karena listener tidak aktif
+    // Tapi kita tambahkan pesan di tabel agar jelas
+    if(historyData.length === 0 && !currentUser) {
+        list.innerHTML = `<tr><td colspan="6" class="text-center py-4 text-muted">Silahkan <b>Login</b> untuk melihat riwayat pesanan Anda.</td></tr>`;
+        return;
+    }
+
+    // Chart logic
     historyData.slice(0, 7).reverse().forEach(item => {
         chartLabels.push(item.inv.split('-').pop()); 
         chartProfit.push(item.netProfit || 0);
@@ -699,10 +862,37 @@ window.renderHistory = function(){
         }
     });
 
-    document.getElementById('statRevenue').innerText = rp(totalRevenue);
-    document.getElementById('statProfit').innerText = rp(totalProfit);
     document.getElementById('statOrders').innerText = historyData.length;
-    initChart(chartLabels, chartProfit, chartHPP);
+
+    // LOGIC DISPLAY CARDS & LAYOUT
+    const chartCard = document.getElementById('chartCard');
+    const colRev = document.getElementById('colRevenue');
+    const colProf = document.getElementById('colProfit');
+    const colOrd = document.getElementById('colOrders');
+    const colSearch = document.getElementById('colSearch');
+
+    const revenueEl = document.getElementById('statRevenue');
+    const profitEl = document.getElementById('statProfit');
+
+    if (isAdmin) {
+        // --- MODE ADMIN ---
+        colRev.style.display = 'block';
+        colProf.style.display = 'block';
+        colOrd.style.display = 'block';
+        colSearch.className = 'col-md-3';
+
+        revenueEl.innerText = rp(totalRevenue);
+        profitEl.innerText = rp(totalProfit);
+        chartCard.style.display = 'block'; 
+        initChart(chartLabels, chartProfit, chartHPP);
+    } else {
+        // --- MODE USER ---
+        colRev.style.display = 'none';
+        colProf.style.display = 'none';
+        colOrd.style.display = 'none';
+        colSearch.className = 'col-12';
+        chartCard.style.display = 'none'; 
+    }
 }
 
 window.loadFromHistory = function(invId){
@@ -720,7 +910,6 @@ window.loadFromHistory = function(invId){
     document.getElementById('support').value = item.details.support; 
     document.getElementById('waste').value = item.details.waste;
     
-    // Profit dan Risk diambil dari history dan dimasukkan ke SETUP tab (hidden but exists)
     document.getElementById('profit').value = item.details.profit; 
     document.getElementById('risk').value = item.details.risk;
     
@@ -754,14 +943,11 @@ window.resetInvCounter = function(){
     } 
 }
 
-// --- SETUP SYNC & SAVE ---
 window.saveSetup = async function() {
     const config = {};
-    // Simpan Biaya Operasional
     ['depr', 'operator', 'watt', 'kwh', 'maint'].forEach(id => {
         config[id] = +document.getElementById(id).value;
     });
-    // Simpan Profit & Risk
     config['profit'] = +document.getElementById('profit').value;
     config['risk'] = +document.getElementById('risk').value;
 
@@ -769,7 +955,6 @@ window.saveSetup = async function() {
     showNotification("Pengaturan Tersimpan!");
 };
 
-// --- CHART & PDF ---
 function initChart(labels, profitData, hppData) {
     const ctx = document.getElementById('performanceChart').getContext('2d');
     if (performanceChart) performanceChart.destroy();
@@ -807,7 +992,6 @@ window.exportPDF = function(){
 renderInventory();
 renderHistory();
 generateInvoiceNum();
-
 </script>
 </body>
 </html>
