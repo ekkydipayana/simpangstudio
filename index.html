@@ -36,8 +36,7 @@ body {
     position: relative; 
 }
 
-/* --- SWEETALERT Z-INDEX FIX (PENTING) --- */
-/* Memastikan notifikasi selalu di paling atas, di atas modal login */
+/* --- SWEETALERT Z-INDEX FIX --- */
 div:where(.swal2-container) {
     z-index: 9999 !important;
 }
@@ -537,12 +536,12 @@ div:where(.swal2-container) input:where(.swal2-input) {
         </div>
         <div class="mb-3">
             <label class="form-label">Password</label>
-            <input type="password" id="authPass" class="form-control" placeholder="••••••••" autocomplete="off">
+            <input type="password" id="authPass" class="form-control" placeholder="••••••••" autocomplete="new-password" readonly onfocus="this.removeAttribute('readonly');">
         </div>
         
         <div id="confirmPassField" class="mb-4" style="display:none;">
             <label class="form-label">Konfirmasi Password</label>
-            <input type="password" id="authPassConfirm" class="form-control" placeholder="••••••••" autocomplete="off">
+            <input type="password" id="authPassConfirm" class="form-control" placeholder="••••••••" autocomplete="new-password" readonly onfocus="this.removeAttribute('readonly');">
         </div>
         
         <button class="btn btn-primary-studio w-100 text-white mb-3" onclick="handleAuthAction()" id="authSubmitBtn">MASUK</button>
@@ -586,7 +585,6 @@ const validateEmail = (email) => {
 };
 
 const validatePhone = (phone) => {
-    // Format Indonesia: Harus 08... dan angka, panjang 10-13 digit
     const re = /^08[0-9]{8,11}$/; 
     return re.test(String(phone));
 };
@@ -753,14 +751,28 @@ window.handleAuthAction = function() {
         if(pass !== confirmPass) return Swal.fire({ icon: 'error', text: "Konfirmasi password tidak cocok.", position: 'center' });
         if(pass.length < 6) return Swal.fire({ icon: 'warning', text: "Password minimal 6 karakter.", position: 'center' });
 
+        // TAMPILKAN LOADING UNTUK MENCEGAH FLASHING UI
+        Swal.fire({ 
+            title: 'Memproses Pendaftaran...', 
+            text: 'Mohon tunggu sebentar',
+            allowOutsideClick: false, 
+            didOpen: () => { Swal.showLoading() } 
+        });
+
         createUserWithEmailAndPassword(auth, email, pass)
             .then(async (cred) => {
+                // TUTUP MODAL SEGERA DI BALIK LAYAR
+                const modalEl = document.getElementById('authModal');
+                const modal = bootstrap.Modal.getInstance(modalEl);
+                if(modal) modal.hide();
+
                 await setDoc(doc(db, "users", cred.user.uid), {
                     firstName, lastName, phone, email,
                     createdAt: new Date()
                 });
+                
+                // NOTIF SUKSES AKAN MENGGANTIKAN LOADING
                 Swal.fire({ icon: 'success', title: 'Berhasil!', text: 'Akun berhasil dibuat.', position: 'center', showConfirmButton: false, timer: 1500 });
-                bootstrap.Modal.getInstance(document.getElementById('authModal')).hide();
             })
             .catch((error) => {
                 let msg = error.message;
