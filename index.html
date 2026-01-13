@@ -2,7 +2,7 @@
 <html lang="id">
 <head>
 <meta charset="UTF-8">
-<title>Simpang Studio | Professional 3D Suite</title>
+<title>Simpang 3D Studio | Professional 3D Suite</title>
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
 
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Cpath fill='%2310b981' d='M32 2L2 19.3v25.4L32 62l30-17.3V19.3L32 2zm0 4l26 15-26 15-26-15 26-15zm-2 33.5L4 24.3v22.4l26 15v-22.2zm4 0v22.2l26-15V24.3L34 39.5z'/%3E%3C/svg%3E">
@@ -12,6 +12,7 @@
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
 <style>
 /* --- THEME VARIABLES --- */
@@ -173,6 +174,7 @@ body {
 .chart-container { position: relative; height: 250px; width: 100%; }
 
 /* --- TOAST NOTIFICATION --- */
+/* (Tetap dipertahankan stylenya tapi kita akan gunakan SweetAlert) */
 #studio-toast {
     position: fixed; top: 20px; right: 20px; z-index: 10000;
     padding: 15px 25px; border-radius: 12px; background: var(--primary);
@@ -246,7 +248,7 @@ body {
         <svg class="mb-3" width="80" height="80" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
             <path d="M32 2L2 19.3v25.4L32 62l30-17.3V19.3L32 2zm0 4l26 15-26 15-26-15 26-15zm-2 33.5L4 24.3v22.4l26 15v-22.2zm4 0v22.2l26-15V24.3L34 39.5z" fill="#10b981"/>
         </svg>
-        <h4 class="fw-800 text-dark">Simpang Studio</h4>
+        <h4 class="fw-800 text-dark">Simpang 3D Studio</h4>
         <p class="text-muted small mb-4">Akses terbatas. Silahkan login untuk mengelola bisnis 3D Printing Anda.</p>
         <button class="btn btn-primary-studio w-100 text-white shadow-sm" onclick="showAuthModal('login')">🚀 LOGIN / DAFTAR</button>
     </div>
@@ -259,7 +261,7 @@ body {
                 <path d="M32 2L2 19.3v25.4L32 62l30-17.3V19.3L32 2zm0 4l26 15-26 15-26-15 26-15zm-2 33.5L4 24.3v22.4l26 15v-22.2zm4 0v22.2l26-15V24.3L34 39.5z" fill="#10b981"/>
             </svg>
             <div>
-                <h2 class="fw-800 m-0 fs-4" style="letter-spacing: -0.5px;">Simpang 3D<span style="color:var(--primary)">Studio.</span></h2>
+                <h2 class="fw-800 m-0 fs-4" style="letter-spacing: -0.5px;">Simpang 3D <span style="color:var(--primary)">Studio.</span></h2>
                 <p class="text-muted small m-0" style="font-size: 0.7rem;">Professional 3D Manager</p>
             </div>
         </div>
@@ -477,7 +479,7 @@ body {
 
                 <div class="mt-4 pt-3 border-top d-flex justify-content-between align-items-center">
                     <button class="btn btn-outline-warning btn-sm fw-bold" onclick="resetInvCounter()">Reset Penomoran Invoice</button>
-                    <span class="text-muted small">Simpang Studio Engine v5.4 Complete Auth</span>
+                    <span class="text-muted small">Simpang 3D Studio Engine v5.4 Complete Auth</span>
                 </div>
             </div></div>
         </div>
@@ -617,7 +619,7 @@ onAuthStateChanged(auth, (user) => {
         authBtn.classList.replace('btn-danger', 'btn-outline-dark');
         authBtn.onclick = () => showAuthModal('login'); 
 
-        // SECURITY: Clear All Inputs (Anti-Hack)
+        // SECURITY: Clear All Inputs
         document.getElementById('authEmail').value = "";
         document.getElementById('authPass').value = "";
         document.getElementById('authPassConfirm').value = "";
@@ -634,12 +636,10 @@ onAuthStateChanged(auth, (user) => {
         historyData = [];
         renderHistory();
 
-        // Close modal if open
         const modalEl = document.getElementById('authModal');
         const modal = bootstrap.Modal.getInstance(modalEl);
         if(modal) modal.hide();
         
-        // Reset Tabs
         const calcTabBtn = document.querySelector('[data-bs-target="#calc"]');
         new bootstrap.Tab(calcTabBtn).show();
     }
@@ -649,10 +649,8 @@ function setupOrderListener(user) {
     if(unsubscribeOrders) unsubscribeOrders();
     let q;
     if(isAdmin) {
-        // Admin lihat semua
         q = collection(db, "orders");
     } else {
-        // User lihat punya sendiri
         q = query(collection(db, "orders"), where("userId", "==", user.uid));
     }
 
@@ -704,7 +702,7 @@ window.handleAuthAction = function() {
     const email = document.getElementById('authEmail').value;
     const pass = document.getElementById('authPass').value;
 
-    if(!email || !pass) return alert("Email dan Password wajib diisi.");
+    if(!email || !pass) return Swal.fire({ icon: 'warning', text: "Email dan Password wajib diisi.", position: 'center' });
 
     if (isRegisterMode) {
         // --- PROSES DAFTAR BARU ---
@@ -713,28 +711,41 @@ window.handleAuthAction = function() {
         const phone = document.getElementById('regPhone').value;
         const confirmPass = document.getElementById('authPassConfirm').value;
 
-        if(!firstName || !lastName || !phone) return alert("Lengkapi data diri Anda (Nama & Telepon).");
-        if(pass !== confirmPass) return alert("Konfirmasi password tidak cocok.");
+        if(!firstName || !lastName || !phone) return Swal.fire({ icon: 'warning', text: "Lengkapi data diri Anda.", position: 'center' });
+        if(pass !== confirmPass) return Swal.fire({ icon: 'error', text: "Konfirmasi password tidak cocok.", position: 'center' });
 
         createUserWithEmailAndPassword(auth, email, pass)
             .then(async (cred) => {
-                // Simpan profil detail ke Firestore
                 await setDoc(doc(db, "users", cred.user.uid), {
                     firstName, lastName, phone, email,
                     createdAt: new Date()
                 });
-                showNotification("Akun Berhasil Dibuat! Selamat Datang.");
+                Swal.fire({ icon: 'success', title: 'Berhasil!', text: 'Akun berhasil dibuat.', position: 'center', showConfirmButton: false, timer: 1500 });
                 bootstrap.Modal.getInstance(document.getElementById('authModal')).hide();
             })
-            .catch((error) => alert("Gagal Daftar: " + error.message));
+            .catch((error) => Swal.fire({ icon: 'error', title: 'Gagal Daftar', text: error.message, position: 'center' }));
     } else {
-        // --- PROSES LOGIN ---
+        // --- PROSES LOGIN (MODIFIKASI: CUSTOM ERROR & POSISI TENGAH) ---
+        Swal.fire({ title: 'Masuk...', allowOutsideClick: false, didOpen: () => { Swal.showLoading() } });
+        
         signInWithEmailAndPassword(auth, email, pass)
             .then(() => {
-                showNotification("Login Berhasil!");
+                Swal.fire({ icon: 'success', title: 'Login Berhasil', position: 'center', showConfirmButton: false, timer: 1500 });
                 bootstrap.Modal.getInstance(document.getElementById('authModal')).hide();
             })
-            .catch((error) => alert("Gagal Login: " + error.message));
+            .catch((error) => {
+                const errorCode = error.code;
+                let pesanError = "Terjadi kesalahan pada sistem.";
+                
+                // Custom Error Message Logic
+                if (errorCode === 'auth/wrong-password') pesanError = "Password salah";
+                else if (errorCode === 'auth/user-not-found') pesanError = "Email salah";
+                else if (errorCode === 'auth/invalid-email') pesanError = "Email salah";
+                else if (errorCode === 'auth/invalid-credential') pesanError = "Email atau Password salah";
+                else if (errorCode === 'auth/too-many-requests') pesanError = "Terlalu banyak percobaan. Coba lagi nanti.";
+                
+                Swal.fire({ icon: 'error', title: 'Gagal Masuk', text: pesanError, position: 'center', confirmButtonText: 'Coba Lagi' });
+            });
     }
 }
 
@@ -742,15 +753,11 @@ window.doGoogleLogin = function() {
     signInWithPopup(auth, googleProvider)
         .then(async (result) => {
             const user = result.user;
-            // Cek apakah user sudah ada di database 'users'
             const userDoc = await getDoc(doc(db, "users", user.uid));
             
             if(!userDoc.exists()) {
-                // Jika user baru via Google, minta No HP karena Google tidak kasih
                 let phone = prompt("Satu langkah lagi! Masukkan No. Telepon Anda:");
-                if(!phone) phone = "-"; // Default jika cancel
-                
-                // Pecah Display Name jadi First & Last
+                if(!phone) phone = "-"; 
                 const names = user.displayName ? user.displayName.split(' ') : ["User", "Google"];
                 const firstName = names[0];
                 const lastName = names.length > 1 ? names.slice(1).join(' ') : "";
@@ -760,22 +767,27 @@ window.doGoogleLogin = function() {
                     createdAt: new Date()
                 });
             }
-            showNotification("Login Google Berhasil!");
+            Swal.fire({ icon: 'success', title: 'Login Google Berhasil!', position: 'center', showConfirmButton: false, timer: 1500 });
             bootstrap.Modal.getInstance(document.getElementById('authModal')).hide();
         })
-        .catch((error) => alert("Google Login Error: " + error.message));
+        .catch((error) => Swal.fire({ icon: 'error', title: 'Google Error', text: error.message, position: 'center' }));
 }
 
 window.doFirebaseLogout = function() {
-    if(confirm("Yakin ingin logout?")) {
-        signOut(auth).then(() => {
-            showNotification("Anda telah Logout.");
-        });
-    }
+    Swal.fire({
+        title: 'Yakin ingin logout?', icon: 'question', showCancelButton: true, confirmButtonText: 'Ya, Logout', position: 'center'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            signOut(auth).then(() => {
+                Swal.fire({ icon: 'success', title: 'Anda telah Logout', position: 'center', showConfirmButton: false, timer: 1500 });
+            });
+        }
+    });
 }
 
 // --- UTILITY & CORE FUNCTIONS ---
 const rp = n => 'Rp ' + (Math.round(n) || 0).toLocaleString('id-ID');
+// Function toast lama tetap dibiarkan agar tidak error jika ada pemanggilan sisa, tapi sudah tidak dipakai untuk fitur utama
 window.showNotification = function(msg = "Data Berhasil Disimpan! ✅") {
     const toast = document.getElementById('studio-toast');
     toast.innerText = msg; toast.style.display = 'block';
@@ -841,10 +853,11 @@ window.saveMaterial = async function() {
     const btn = document.getElementById('btnSaveMat');
     const name = nameEl.value.trim();
     const price = Number(priceEl.value);
-    if(!name || price <= 0) return alert('Data tidak valid!');
+    if(!name || price <= 0) return Swal.fire({icon: 'warning', text: 'Data material tidak valid!', position: 'center'});
     if (editIndex !== -1 && editIndex !== name) await deleteDoc(doc(db, "materials", editIndex));
     await setDoc(doc(db, "materials", name), { name, price });
     nameEl.value = ''; priceEl.value = ''; editIndex = -1; btn.innerText = 'Simpan';
+    Swal.fire({icon: 'success', title: 'Material Disimpan', position: 'center', showConfirmButton: false, timer: 1000});
 };
 
 window.editMaterial = function(name){
@@ -873,7 +886,7 @@ window.generateInvoiceNum = function(){
 window.calculateAndSave = async function() {
     if(!currentUser) return showAuthModal('login');
     const weightVal = +document.getElementById('weight').value || 0;
-    if(weightVal <= 0) return alert("Berat harus diisi!");
+    if(weightVal <= 0) return Swal.fire({icon: 'warning', text: "Berat harus diisi!", position: 'center'});
     const resultObj = calculate();
     
     // FIX KEPEMILIKAN
@@ -881,7 +894,15 @@ window.calculateAndSave = async function() {
     else { resultObj.userId = currentUser.uid; resultObj.userEmail = currentUser.email; }
     
     await setDoc(doc(db, "orders", resultObj.inv), resultObj);
-    showNotification("Pesanan Disimpan!");
+    
+    // MODIFIKASI: Notifikasi Save di Tengah
+    Swal.fire({
+        icon: 'success',
+        title: 'Pesanan Disimpan!',
+        position: 'center',
+        showConfirmButton: false,
+        timer: 1500
+    });
     
     if (!isEditMode) { generateInvoiceNum(); document.getElementById('customer').value = ''; document.getElementById('itemName').value = ''; document.getElementById('weight').value = ''; } 
     else { isEditMode = false; currentEditingInv = ""; currentEditingOwnerId = null; generateInvoiceNum(); const btn = document.querySelector('button[onclick="calculateAndSave()"]'); if(btn) btn.innerText = "HITUNG & SIMPAN"; }
@@ -990,7 +1011,13 @@ window.loadFromHistory = function(invId){
 
 window.deleteHistory = async function(invId){ if(confirm(`Hapus invoice ${invId}?`)) await deleteDoc(doc(db, "orders", invId)); }
 window.resetInvCounter = function(){ if(confirm('Penomoran otomatis berdasarkan waktu. Reset tidak diperlukan.')){ } }
-window.saveSetup = async function() { const config = {}; ['depr', 'operator', 'watt', 'kwh', 'maint'].forEach(id => { config[id] = +document.getElementById(id).value; }); config['profit'] = +document.getElementById('profit').value; config['risk'] = +document.getElementById('risk').value; await setDoc(doc(db, "settings", "config"), config); showNotification("Pengaturan Tersimpan!"); };
+
+window.saveSetup = async function() { 
+    const config = {}; ['depr', 'operator', 'watt', 'kwh', 'maint'].forEach(id => { config[id] = +document.getElementById(id).value; }); config['profit'] = +document.getElementById('profit').value; config['risk'] = +document.getElementById('risk').value; 
+    await setDoc(doc(db, "settings", "config"), config); 
+    // MODIFIKASI: Notifikasi Tengah
+    Swal.fire({icon: 'success', title: 'Pengaturan Tersimpan!', position: 'center', showConfirmButton: false, timer: 1500}); 
+};
 
 function initChart(labels, profitData, hppData) {
     const ctx = document.getElementById('performanceChart').getContext('2d');
@@ -999,12 +1026,18 @@ function initChart(labels, profitData, hppData) {
 }
 
 window.exportPDF = function(){
-    const { jsPDF } = window.jspdf; const doc = new jsPDF('p', 'mm', 'a4'); calculate(); const data = lastCalculatedData; if(!data.inv) return alert("Silahkan Hitung & Simpan data terlebih dahulu!");
+    const { jsPDF } = window.jspdf; const doc = new jsPDF('p', 'mm', 'a4'); calculate(); const data = lastCalculatedData; 
+    if(!data.inv) return Swal.fire({icon: 'warning', text: "Silahkan Hitung & Simpan data terlebih dahulu!", position: 'center'});
+    
     doc.setFontSize(16); doc.text("SIMPANG STUDIO INVOICE", 15, 20); doc.setFontSize(12); doc.text("Invoice: " + data.inv, 15, 30); doc.text("Customer: " + (document.getElementById('customer').value || "Pelanggan"), 15, 40); doc.text("Total: " + rp(data.total), 15, 50); doc.text("Status: " + data.status, 15, 60); doc.save(`${data.inv}.pdf`);
+    
+    // MODIFIKASI: Notifikasi Invoice di Tengah
+    Swal.fire({
+        icon: 'info', title: 'Invoice Dicetak', text: 'File PDF telah diunduh.', position: 'center', confirmButtonText: 'OK'
+    });
 }
 
 renderInventory(); renderHistory(); generateInvoiceNum();
 </script>
 </body>
 </html>
-
