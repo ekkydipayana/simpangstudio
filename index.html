@@ -36,9 +36,10 @@ body {
     position: relative; 
 }
 
-/* --- SWEETALERT Z-INDEX FIX --- */
+/* --- SWEETALERT Z-INDEX FIX (SUPER PENTING) --- */
+/* Memastikan loading/alert selalu di atas segalanya */
 div:where(.swal2-container) {
-    z-index: 9999 !important;
+    z-index: 10000 !important;
 }
 
 div:where(.swal2-container) input:where(.swal2-input) {
@@ -203,7 +204,7 @@ div:where(.swal2-container) input:where(.swal2-input) {
 #globalBlocker {
     position: fixed; 
     top: 0; left: 0; right: 0; bottom: 0;
-    background: rgba(248, 250, 252, 0.85); 
+    background: rgba(248, 250, 252, 0.95); /* Sedikit lebih pekat */
     backdrop-filter: blur(8px);
     z-index: 2000; 
     display: flex;
@@ -534,14 +535,15 @@ div:where(.swal2-container) input:where(.swal2-input) {
             <label class="form-label">Email</label>
             <input type="email" id="authEmail" class="form-control" placeholder="nama@email.com" autocomplete="off">
         </div>
+        
         <div class="mb-3">
             <label class="form-label">Password</label>
-            <input type="password" id="authPass" class="form-control" placeholder="••••••••" autocomplete="new-password" readonly onfocus="this.removeAttribute('readonly');">
+            <input type="password" id="authPass" class="form-control" placeholder="••••••••" autocomplete="new-password" readonly onfocus="this.removeAttribute('readonly');" data-lpignore="true">
         </div>
         
         <div id="confirmPassField" class="mb-4" style="display:none;">
             <label class="form-label">Konfirmasi Password</label>
-            <input type="password" id="authPassConfirm" class="form-control" placeholder="••••••••" autocomplete="new-password" readonly onfocus="this.removeAttribute('readonly');">
+            <input type="password" id="authPassConfirm" class="form-control" placeholder="••••••••" autocomplete="new-password" readonly onfocus="this.removeAttribute('readonly');" data-lpignore="true">
         </div>
         
         <button class="btn btn-primary-studio w-100 text-white mb-3" onclick="handleAuthAction()" id="authSubmitBtn">MASUK</button>
@@ -616,6 +618,16 @@ onAuthStateChanged(auth, (user) => {
         globalBlocker.style.display = 'none'; // BUKA GEMBOK
         userDisplay.innerText = user.displayName || user.email;
         
+        // Safety: Pastikan modal tertutup jika user sudah login
+        const modalEl = document.getElementById('authModal');
+        const modal = bootstrap.Modal.getInstance(modalEl);
+        if(modal) modal.hide();
+        // Hapus backdrop sisa jika ada (Fix untuk layar tumpuk)
+        const backdrops = document.querySelectorAll('.modal-backdrop');
+        backdrops.forEach(bd => bd.remove());
+        document.body.classList.remove('modal-open');
+        document.body.style.overflow = '';
+
         // ADMIN CHECK (Hardcoded)
         if(user.email === 'admin@simpang.com') {
             isAdmin = true;
@@ -738,7 +750,6 @@ window.handleAuthAction = function() {
 
         if(!firstName || !lastName || !phone) return Swal.fire({ icon: 'warning', text: "Lengkapi data diri Anda (Nama & Telepon).", position: 'center' });
         
-        // VALIDASI NO TELEPON KETAT
         if(!validatePhone(phone)) {
             return Swal.fire({ 
                 icon: 'error', 
@@ -751,28 +762,33 @@ window.handleAuthAction = function() {
         if(pass !== confirmPass) return Swal.fire({ icon: 'error', text: "Konfirmasi password tidak cocok.", position: 'center' });
         if(pass.length < 6) return Swal.fire({ icon: 'warning', text: "Password minimal 6 karakter.", position: 'center' });
 
-        // TAMPILKAN LOADING UNTUK MENCEGAH FLASHING UI
+        // LOADING SCREEN MENUTUPI MODAL (Mencegah Tumpuk)
         Swal.fire({ 
-            title: 'Memproses Pendaftaran...', 
-            text: 'Mohon tunggu sebentar',
-            allowOutsideClick: false, 
+            title: 'Mendaftarkan Akun...', 
+            text: 'Mohon jangan tutup halaman ini',
+            allowOutsideClick: false,
+            backdrop: true, // Gelapkan layar total
             didOpen: () => { Swal.showLoading() } 
         });
 
         createUserWithEmailAndPassword(auth, email, pass)
             .then(async (cred) => {
-                // TUTUP MODAL SEGERA DI BALIK LAYAR
+                // 1. TUTUP MODAL SECARA PAKSA SAAT LOADING MASIH JALAN
                 const modalEl = document.getElementById('authModal');
                 const modal = bootstrap.Modal.getInstance(modalEl);
                 if(modal) modal.hide();
-
+                // Hapus backdrop bootstrap manual jika nyangkut
+                const backdrops = document.querySelectorAll('.modal-backdrop');
+                backdrops.forEach(bd => bd.remove());
+                
+                // 2. SIMPAN DATA (Tunggu sampai selesai)
                 await setDoc(doc(db, "users", cred.user.uid), {
                     firstName, lastName, phone, email,
                     createdAt: new Date()
                 });
                 
-                // NOTIF SUKSES AKAN MENGGANTIKAN LOADING
-                Swal.fire({ icon: 'success', title: 'Berhasil!', text: 'Akun berhasil dibuat.', position: 'center', showConfirmButton: false, timer: 1500 });
+                // 3. BARU TAMPILKAN SUKSES (Loading hilang otomatis diganti ini)
+                Swal.fire({ icon: 'success', title: 'Berhasil!', text: 'Akun berhasil dibuat. Selamat Datang!', position: 'center', showConfirmButton: false, timer: 1500 });
             })
             .catch((error) => {
                 let msg = error.message;
@@ -785,8 +801,12 @@ window.handleAuthAction = function() {
         
         signInWithEmailAndPassword(auth, email, pass)
             .then(() => {
+                // Tutup modal paksa juga disini
+                const modalEl = document.getElementById('authModal');
+                const modal = bootstrap.Modal.getInstance(modalEl);
+                if(modal) modal.hide();
+
                 Swal.fire({ icon: 'success', title: 'Login Berhasil', position: 'center', showConfirmButton: false, timer: 1500 });
-                bootstrap.Modal.getInstance(document.getElementById('authModal')).hide();
             })
             .catch((error) => {
                 const errorCode = error.code;
@@ -818,7 +838,6 @@ window.doGoogleLogin = function() {
             const userDoc = await getDoc(doc(db, "users", user.uid));
             
             if(!userDoc.exists()) {
-                // 3. TAMPILKAN INPUT NOMOR HP (Blocking)
                 const { value: phone } = await Swal.fire({
                     title: '👋 Selamat Datang!',
                     text: 'Satu langkah lagi, masukkan No. WhatsApp/HP aktif untuk kelengkapan data.',
