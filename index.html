@@ -115,7 +115,7 @@ body {
     font-size: 0.9rem;
 }
 .profile-label { font-weight: 600; color: #64748b; font-size: 0.75rem; display: block; }
-.profile-val { font-weight: 700; color: #1e293b; }
+.profile-val { font-weight: 700; color: #1e293b; text-transform: capitalize; }
 
 @keyframes fadeIn {
     from { opacity: 0; transform: translateY(10px); }
@@ -461,12 +461,19 @@ div:where(.swal2-container) input:where(.swal2-input) { border-radius: 10px !imp
                 </div>
 
                 <h5 class="fw-bold mb-4 text-success">Biaya Operasional (Cost per Hour)</h5>
-                <div class="row g-3">
+                <div class="row g-3 border-bottom pb-4 mb-4">
                     <div class="col-md-4"><label class="form-label">Depresiasi Mesin/jam</label><input id="depr" class="form-control" type="number" value="2100"></div>
                     <div class="col-md-4"><label class="form-label">Jasa Operator/jam</label><input id="operator" class="form-control" type="number" value="2000"></div>
                     <div class="col-md-4"><label class="form-label">Konsumsi Mesin (Watt)</label><input id="watt" class="form-control" type="number" value="100"></div>
                     <div class="col-md-6"><label class="form-label">Tarif Listrik (per kWh)</label><input id="kwh" class="form-control" type="number" value="1500"></div>
                     <div class="col-md-6"><label class="form-label">Maintenance/jam</label><input id="maint" class="form-control" type="number" value="750"></div>
+                </div>
+
+                <h5 class="fw-bold mb-4 text-success">Rekening Pembayaran (Transfer)</h5>
+                <div class="row g-3">
+                    <div class="col-md-4"><label class="form-label">Nama Bank</label><input id="bankName" class="form-control" placeholder="BCA"></div>
+                    <div class="col-md-4"><label class="form-label">No. Rekening</label><input id="bankRek" class="form-control" placeholder="1234567890"></div>
+                    <div class="col-md-4"><label class="form-label">Atas Nama</label><input id="bankHolder" class="form-control" placeholder="Simpang Studio"></div>
                 </div>
                 
                 <button class="btn btn-primary-studio w-100 text-white mt-4 shadow-sm" onclick="saveSetup()">💾 SIMPAN PENGATURAN & MARGIN</button>
@@ -599,9 +606,17 @@ onAuthStateChanged(auth, async (user) => {
             const userSnap = await getDoc(doc(db, "users", user.uid));
             if(userSnap.exists()) {
                 currentUserData = userSnap.data();
+                if (!currentUserData.firstName || currentUserData.firstName === 'User') {
+                    currentUserData.firstName = user.email.split('@')[0];
+                }
                 renderProfilePopup(currentUserData);
+                // AUTOFILL CUSTOMER NAME
+                const fullName = currentUserData.firstName + (currentUserData.lastName ? " " + currentUserData.lastName : "");
+                document.getElementById('customer').value = fullName;
             } else {
-                renderProfilePopup({ firstName: "User", email: user.email, phone: "-" });
+                const nameFromEmail = user.email.split('@')[0];
+                renderProfilePopup({ firstName: nameFromEmail, email: user.email, phone: "-" });
+                document.getElementById('customer').value = nameFromEmail;
             }
         } catch(e) { console.log(e); }
         globalBlocker.style.display = 'none';
@@ -627,6 +642,7 @@ onAuthStateChanged(auth, async (user) => {
         document.body.classList.remove('is-admin');
         document.getElementById('authEmail').value = "";
         document.getElementById('authPass').value = "";
+        document.getElementById('customer').value = ""; // Clear on logout
         calculate(); 
         if(unsubscribeOrders) unsubscribeOrders();
         historyData = [];
@@ -646,11 +662,18 @@ window.renderProfilePopup = function(userData) {
         container.innerHTML = `<p class="text-center text-muted small">Silahkan Login</p>`;
         return;
     }
-    const name = (userData.firstName || "") + " " + (userData.lastName || "");
+    
+    let displayName = "User";
+    if (userData.firstName && userData.firstName !== "User") {
+        displayName = userData.firstName + " " + (userData.lastName || "");
+    } else if (userData.email) {
+        displayName = userData.email.split('@')[0];
+    }
+
     container.innerHTML = `
         <div class="profile-info-row">
             <span class="profile-label">NAMA</span>
-            <span class="profile-val">${name || 'User'}</span>
+            <span class="profile-val">${displayName}</span>
         </div>
         <div class="profile-info-row">
             <span class="profile-label">EMAIL</span>
@@ -663,22 +686,40 @@ window.renderProfilePopup = function(userData) {
     `;
 }
 
-// --- CART FUNCTIONS ---
+// --- CART FUNCTIONS (UPDATED: STACKING & SWEETALERT) ---
 window.addToCart = function() {
     if(!currentUser) return showAuthModal('login');
     const weightVal = +document.getElementById('weight').value || 0;
     if(weightVal <= 0) return Swal.fire({icon: 'warning', text: "Berat harus diisi!", position: 'center'});
-    const resultObj = calculate();
-    cart.push(resultObj);
+    
+    const newItem = calculate();
+    
+    // Check for identical item
+    const existingIndex = cart.findIndex(x => 
+        x.item === newItem.item && 
+        x.details.weight === newItem.details.weight && 
+        x.details.time === newItem.details.time &&
+        x.details.matName === newItem.details.matName
+    );
+
+    if (existingIndex > -1) {
+        // Update existing item
+        cart[existingIndex].details.qty += newItem.details.qty;
+        cart[existingIndex].total += newItem.total;
+    } else {
+        // Add new
+        cart.push(newItem);
+    }
+
     updateCartUI();
+    
+    // UPDATE: SweetAlert Center Standard
     Swal.fire({
         icon: 'success',
-        title: 'Masuk Keranjang!',
-        text: `${resultObj.item || 'Item'} ditambahkan.`,
-        position: 'top-end',
+        title: 'Berhasil Masuk Keranjang!',
+        text: `${newItem.item || 'Item'} telah ditambahkan.`,
         showConfirmButton: false,
-        timer: 1000,
-        toast: true
+        timer: 1500
     });
 }
 
@@ -686,7 +727,11 @@ window.updateCartUI = function() {
     const countBadge = document.getElementById('cartCount');
     const listPopup = document.getElementById('cartListPopup');
     const totalPopup = document.getElementById('cartTotalPopup');
-    countBadge.innerText = cart.length;
+    
+    // UPDATE: Hitung TOTAL QTY item (bukan baris array)
+    const totalQty = cart.reduce((sum, item) => sum + (item.details.qty || 1), 0);
+    countBadge.innerText = totalQty;
+
     if(cart.length === 0) {
         listPopup.innerHTML = `<p class="text-center text-muted small my-3">Keranjang kosong</p>`;
         totalPopup.innerText = rp(0);
@@ -721,9 +766,109 @@ window.calculateOnly = function() {
     calculate();
 }
 
+// --- CHECKOUT WITH PAYMENT METHODS ---
 window.checkoutCart = async function() {
     if(cart.length === 0) return Swal.fire('Keranjang Kosong', 'Tambahkan item terlebih dahulu.', 'warning');
     if(!currentUser) return showAuthModal('login');
+
+    const { value: paymentMethod } = await Swal.fire({
+        title: 'Metode Pembayaran',
+        input: 'radio',
+        inputOptions: {
+            'COD': 'COD / Tunai (Bayar Ditempat)',
+            'BANK': 'Transfer Bank (BCA / Mandiri)',
+            'QRIS': 'QRIS / E-Wallet (Ovo, Dana, dll)'
+        },
+        inputValidator: (value) => {
+            if (!value) return 'Anda harus memilih metode pembayaran!'
+        },
+        confirmButtonText: 'Lanjut Bayar',
+        showCancelButton: true
+    });
+
+    if (!paymentMethod) return;
+
+    let orderStatus = 'BELUM LUNAS';
+
+    if (paymentMethod === 'COD') {
+        const confirm = await Swal.fire({
+            title: 'Konfirmasi COD',
+            text: 'Pesanan akan diproses. Mohon siapkan uang tunai saat pengambilan/pengantaran.',
+            icon: 'info',
+            showCancelButton: true,
+            confirmButtonText: 'Ya, Pesan Sekarang'
+        });
+        if(!confirm.isConfirmed) return;
+        orderStatus = 'BELUM LUNAS (COD)';
+    } 
+    else if (paymentMethod === 'BANK') {
+        // GET BANK INFO FROM SETUP
+        const s = JSON.parse(localStorage.getItem('setup_3d') || '{}');
+        const bankHtml = (s.bankName && s.bankRek) 
+            ? `<ul class="list-group mb-3"><li class="list-group-item"><b>${s.bankName}</b><br>${s.bankRek}<br>a/n ${s.bankHolder || '-'}</li></ul>` 
+            : `<p class="text-danger small">Belum ada data rekening di sistem.</p>`;
+
+        const confirm = await Swal.fire({
+            title: 'Transfer Bank',
+            html: `
+                <div class="text-start">
+                    <p class="mb-1">Silahkan transfer ke:</p>
+                    ${bankHtml}
+                    <p class="small text-muted">Upload bukti transfer nanti atau kirim ke WA Admin.</p>
+                </div>
+            `,
+            icon: 'info',
+            showCancelButton: true,
+            confirmButtonText: 'Saya Sudah Transfer'
+        });
+        if(!confirm.isConfirmed) return;
+        orderStatus = 'MENUNGGU VERIFIKASI';
+    }
+    else if (paymentMethod === 'QRIS') {
+        let timerInterval;
+        let isPaid = false;
+        
+        await Swal.fire({
+            title: 'Scan QRIS',
+            html: `
+                <div class="text-center">
+                    <img src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=https://simpang-studio.web.app/pay" class="img-fluid mb-3" style="border: 2px solid #10b981; padding: 10px; border-radius: 10px;">
+                    <h4 id="qris-timer" class="text-danger fw-bold">02:00</h4>
+                    <p class="small text-muted">Menunggu pembayaran masuk...<br>Status akan otomatis berubah.</p>
+                </div>
+            `,
+            timer: 120000, 
+            timerProgressBar: true,
+            showConfirmButton: false,
+            allowOutsideClick: false,
+            didOpen: () => {
+                const timerEl = document.getElementById('qris-timer');
+                let timeLeft = 120;
+                
+                timerInterval = setInterval(() => {
+                    timeLeft--;
+                    const m = Math.floor(timeLeft / 60).toString().padStart(2, '0');
+                    const s = (timeLeft % 60).toString().padStart(2, '0');
+                    if(timerEl) timerEl.textContent = `${m}:${s}`;
+                    
+                    if(timeLeft === 115) { 
+                        clearInterval(timerInterval);
+                        isPaid = true;
+                        Swal.close(); 
+                    }
+                }, 1000);
+            },
+            willClose: () => {
+                clearInterval(timerInterval);
+            }
+        });
+
+        if (!isPaid) {
+             return Swal.fire('Waktu Habis', 'Pembayaran QRIS kadaluarsa. Pesanan dibatalkan.', 'error');
+        } else {
+             orderStatus = 'LUNAS'; 
+        }
+    }
 
     Swal.fire({
         title: 'Memproses Pesanan...',
@@ -741,6 +886,8 @@ window.checkoutCart = async function() {
             
             item.inv = invId;
             item.timestamp = timestamp;
+            item.paymentMethod = paymentMethod;
+            item.status = orderStatus;
             
             await setDoc(doc(db, "orders", invId), item);
         }
@@ -748,7 +895,14 @@ window.checkoutCart = async function() {
         cart = [];
         updateCartUI();
         
-        document.getElementById('customer').value = '';
+        // REFILL NAME AFTER CHECKOUT
+        if(currentUserData) {
+             const fullName = currentUserData.firstName + (currentUserData.lastName ? " " + currentUserData.lastName : "");
+             document.getElementById('customer').value = fullName;
+        } else {
+             document.getElementById('customer').value = '';
+        }
+        
         document.getElementById('itemName').value = '';
         document.getElementById('weight').value = '';
         document.getElementById('quantity').value = '1';
@@ -756,8 +910,8 @@ window.checkoutCart = async function() {
 
         Swal.fire({
             icon: 'success',
-            title: 'Pembelian Berhasil!',
-            text: 'Semua item telah diproses dan masuk ke Riwayat.',
+            title: 'Pesanan Berhasil!',
+            text: orderStatus === 'LUNAS' ? 'Pembayaran diterima. Pesanan diproses.' : 'Pesanan telah dibuat. Silahkan selesaikan pembayaran.',
             timer: 2000,
             showConfirmButton: false
         });
@@ -968,6 +1122,11 @@ onSnapshot(doc(db, "settings", "config"), (docSnap) => {
         });
         if(data.profit) document.getElementById('profit').value = data.profit;
         if(data.risk) document.getElementById('risk').value = data.risk;
+        
+        // Load Bank Data to Setup Inputs
+        if(data.bankName) document.getElementById('bankName').value = data.bankName;
+        if(data.bankRek) document.getElementById('bankRek').value = data.bankRek;
+        if(data.bankHolder) document.getElementById('bankHolder').value = data.bankHolder;
     }
 });
 
@@ -1101,7 +1260,7 @@ function calculate(){
         details: { 
             weight: weightVal, 
             time: timeVal, 
-            qty: qtyVal, // Simpan Qty
+            qty: qtyVal, 
             profit: profitVal, 
             risk: riskVal, 
             discount: discPercent, 
@@ -1159,7 +1318,6 @@ window.loadFromHistory = function(invId){
     isEditMode = true; currentEditingInv = invId; currentEditingOwnerId = item.userId; 
     document.getElementById('customer').value = item.cust; document.getElementById('itemName').value = item.item || ''; document.getElementById('invDisplay').innerText = item.inv;
     document.getElementById('weight').value = item.details.weight; document.getElementById('time').value = item.details.time;
-    // Load Qty
     document.getElementById('quantity').value = item.details.qty || 1; 
     
     document.getElementById('profit').value = item.details.profit; document.getElementById('risk').value = item.details.risk;
@@ -1174,7 +1332,16 @@ window.deleteHistory = async function(invId){ if(confirm(`Hapus invoice ${invId}
 window.resetInvCounter = function(){ if(confirm('Penomoran otomatis berdasarkan waktu. Reset tidak diperlukan.')){ } }
 
 window.saveSetup = async function() { 
-    const config = {}; ['depr', 'operator', 'watt', 'kwh', 'maint'].forEach(id => { config[id] = +document.getElementById(id).value; }); config['profit'] = +document.getElementById('profit').value; config['risk'] = +document.getElementById('risk').value; 
+    const config = {}; 
+    ['depr', 'operator', 'watt', 'kwh', 'maint'].forEach(id => { config[id] = +document.getElementById(id).value; }); 
+    config['profit'] = +document.getElementById('profit').value; 
+    config['risk'] = +document.getElementById('risk').value; 
+    
+    // SAVE BANK DATA
+    config['bankName'] = document.getElementById('bankName').value;
+    config['bankRek'] = document.getElementById('bankRek').value;
+    config['bankHolder'] = document.getElementById('bankHolder').value;
+
     await setDoc(doc(db, "settings", "config"), config); 
     Swal.fire({icon: 'success', title: 'Pengaturan Tersimpan!', position: 'center', showConfirmButton: false, timer: 1500}); 
 };
@@ -1269,7 +1436,7 @@ window.exportPDF = function() {
 
     y += 6;
     const statusText = data.status || "BELUM LUNAS";
-    const statusColor = statusText === 'LUNAS' ? [22, 163, 74] : [234, 88, 12]; 
+    const statusColor = statusText === 'LUNAS' || statusText.includes('LUNAS') ? [22, 163, 74] : [234, 88, 12]; 
     doc.setFontSize(8);
     doc.setFont("helvetica", "bold");
     const badgeWidth = doc.getTextWidth(statusText) + 12; 
@@ -1306,7 +1473,6 @@ window.exportPDF = function() {
 
     doc.text(`${matName}`, margin + 80, y);
     doc.setFontSize(8);
-    // Update PDF Detail
     doc.text(`Berat/pcs: ${weight}gr | Qty: ${qty}`, margin + 80, y + 5);
     
     doc.setFontSize(10);
@@ -1345,11 +1511,12 @@ window.exportPDF = function() {
 
     y += 8;
     doc.setFillColor(primaryColor);
-    doc.roundedRect(sumXLabel - 5, y - 5, 65, 12, 2, 2, 'F');
+    // PERBAIKAN: Melebarkan kotak TOTAL BAYAR menjadi 85 agar tidak tertumpuk
+    doc.roundedRect(sumXLabel - 25, y - 5, 85, 12, 2, 2, 'F');
     doc.setFontSize(11);
     doc.setFont("helvetica", "bold");
     doc.setTextColor(255, 255, 255);
-    doc.text("TOTAL BAYAR", sumXLabel, y + 2.5);
+    doc.text("TOTAL BAYAR", sumXLabel - 20, y + 2.5);
     doc.text(rp(data.total), sumXValue, y + 2.5, { align: "right" });
 
     // 5. FOOTER
