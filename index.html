@@ -2,7 +2,7 @@
 <html lang="id">
 <head>
 <meta charset="UTF-8">
-<title>Simpang 3D Studio | Professional 3D Suite</title>
+<title>Simpang 3D Studio | Marketplace Mode</title>
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
 
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Cpath fill='%2310b981' d='M32 2L2 19.3v25.4L32 62l30-17.3V19.3L32 2zm0 4l26 15-26 15-26-15 26-15zm-2 33.5L4 24.3v22.4l26 15v-22.2zm4 0v22.2l26-15V24.3L34 39.5z'/%3E%3C/svg%3E">
@@ -36,217 +36,174 @@ body {
     position: relative; 
 }
 
-/* --- SWEETALERT Z-INDEX FIX --- */
-div:where(.swal2-container) {
-    z-index: 10000 !important;
+/* --- MARKETPLACE HEADER STYLES --- */
+.header-icon-wrapper {
+    position: relative;
+    cursor: pointer;
+    padding: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
-div:where(.swal2-container) input:where(.swal2-input) {
-    border-radius: 10px !important;
-    border: 1px solid #e2e8f0 !important;
-    font-size: 1rem !important;
-    margin: 1em 2em 3px !important;
+.header-icon-svg {
+    width: 28px;
+    height: 28px;
+    fill: #334155;
+    transition: 0.2s;
 }
 
-/* --- CARD STYLING --- */
-.card { 
-    border: none; 
-    border-radius: 16px; 
-    box-shadow: var(--card-shadow); 
-    background: #ffffff;
-    overflow: hidden;
-    margin-bottom: 1.5rem;
+.header-icon-wrapper:hover .header-icon-svg {
+    fill: var(--primary);
 }
 
-/* --- NAVIGATION TABS --- */
-.nav-pills { 
-    background: #e2e8f0; 
-    padding: 6px; 
-    border-radius: 12px; 
-}
-
-.nav-pills .nav-link { 
-    color: #64748b; 
-    font-weight: 600; 
-    border-radius: 8px; 
-    padding: 10px 20px;
-    white-space: nowrap; 
-}
-
-.nav-pills .nav-link.active { 
-    background: var(--primary); 
-    color: white; 
-    box-shadow: 0 4px 6px -1px rgba(16, 185, 129, 0.4); 
-}
-
-/* --- RESULT DISPLAY --- */
-.result-display {
-    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+.cart-badge {
+    position: absolute;
+    top: 2px;
+    right: 2px;
+    background: #ef4444;
     color: white;
-    padding: 2rem;
-    border-radius: 16px;
-    text-align: center;
-    margin-bottom: 1.5rem;
+    font-size: 0.65rem;
+    font-weight: 800;
+    padding: 2px 6px;
+    border-radius: 10px;
+    border: 2px solid white;
 }
+
+/* --- POPUP DROPDOWN (HOVER) --- */
+.custom-popup {
+    display: none;
+    position: absolute;
+    top: 100%;
+    right: 0;
+    width: 340px;
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+    border: 1px solid #e2e8f0;
+    z-index: 3000;
+    padding: 15px;
+    animation: fadeIn 0.2s ease-in-out;
+}
+
+.header-icon-wrapper:hover .custom-popup {
+    display: block;
+}
+
+.popup-header {
+    font-weight: 800;
+    border-bottom: 2px solid #f1f5f9;
+    padding-bottom: 10px;
+    margin-bottom: 10px;
+    color: var(--primary);
+    text-transform: uppercase;
+    font-size: 0.85rem;
+    letter-spacing: 0.05em;
+}
+
+.cart-item {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 10px;
+    font-size: 0.85rem;
+    border-bottom: 1px dashed #f1f5f9;
+    padding-bottom: 8px;
+}
+
+.profile-info-row {
+    margin-bottom: 8px;
+    font-size: 0.9rem;
+}
+.profile-label { font-weight: 600; color: #64748b; font-size: 0.75rem; display: block; }
+.profile-val { font-weight: 700; color: #1e293b; }
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* --- EXISTING STYLES --- */
+div:where(.swal2-container) { z-index: 10000 !important; }
+div:where(.swal2-container) input:where(.swal2-input) { border-radius: 10px !important; border: 1px solid #e2e8f0 !important; font-size: 1rem !important; margin: 1em 2em 3px !important; }
+
+.card { border: none; border-radius: 16px; box-shadow: var(--card-shadow); background: #ffffff; overflow: hidden; margin-bottom: 1.5rem; }
+.nav-pills { background: #e2e8f0; padding: 6px; border-radius: 12px; }
+.nav-pills .nav-link { color: #64748b; font-weight: 600; border-radius: 8px; padding: 10px 20px; white-space: nowrap; }
+.nav-pills .nav-link.active { background: var(--primary); color: white; box-shadow: 0 4px 6px -1px rgba(16, 185, 129, 0.4); }
+
+.result-display { background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: white; padding: 2rem; border-radius: 16px; text-align: center; margin-bottom: 1.5rem; }
 .result-display h2 { font-weight: 800; font-size: 2.5rem; margin: 0; }
 .result-display p { opacity: 0.9; font-weight: 500; margin-bottom: 5px; }
 
-/* --- FORM ELEMENTS --- */
 .form-label { font-weight: 600; color: #475569; font-size: 0.85rem; margin-bottom: 0.5rem; }
+.form-control, .form-select { border-radius: 10px; padding: 10px 14px; border: 1px solid #e2e8f0; }
+.form-control:focus, .form-select:focus { border-color: var(--primary); box-shadow: 0 0 0 4px rgba(16, 185, 129, 0.1); }
 
-.form-control, .form-select {
-    border-radius: 10px;
-    padding: 10px 14px;
-    border: 1px solid #e2e8f0;
+/* --- UPDATED BUTTONS --- */
+.btn-primary-studio { 
+    background: var(--primary); 
+    border: 2px solid var(--primary); 
+    padding: 10px 12px; 
+    font-weight: 700; 
+    border-radius: 10px; 
+    transition: 0.3s;
+    color: white;
+}
+.btn-primary-studio:hover { 
+    background: var(--primary-dark); 
+    border-color: var(--primary-dark);
+    transform: translateY(-2px); 
+    color: white;
 }
 
-.form-control:focus, .form-select:focus {
-    border-color: var(--primary);
-    box-shadow: 0 0 0 4px rgba(16, 185, 129, 0.1);
-}
-
-/* --- BUTTONS --- */
-.btn-primary-studio {
-    background: var(--primary);
-    border: none;
-    padding: 12px;
+.btn-outline-primary-studio {
+    background: transparent;
+    border: 2px solid var(--primary);
+    color: var(--primary);
+    padding: 10px 12px;
     font-weight: 700;
     border-radius: 10px;
     transition: 0.3s;
 }
-.btn-primary-studio:hover { background: var(--primary-dark); transform: translateY(-2px); }
-
-.btn-google {
-    background: #ffffff;
-    border: 1px solid #cbd5e1;
-    color: #475569;
-    padding: 10px;
-    font-weight: 600;
-    border-radius: 10px;
-    transition: 0.2s;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 10px;
+.btn-outline-primary-studio:hover {
+    background: var(--primary);
+    color: white;
+    transform: translateY(-2px);
 }
+
+.btn-google { background: #ffffff; border: 1px solid #cbd5e1; color: #475569; padding: 10px; font-weight: 600; border-radius: 10px; transition: 0.2s; display: flex; align-items: center; justify-content: center; gap: 10px; }
 .btn-google:hover { background: #f1f5f9; border-color: #94a3b8; }
-
-.btn-action {
-    padding: 6px 12px;
-    border-radius: 8px;
-    font-size: 0.75rem;
-    font-weight: 700;
-    transition: 0.2s;
-    border: 1px solid transparent;
-}
-
+.btn-action { padding: 6px 12px; border-radius: 8px; font-size: 0.75rem; font-weight: 700; transition: 0.2s; border: 1px solid transparent; }
 .btn-edit { color: #3b82f6; border-color: rgba(59, 130, 246, 0.3); background: rgba(59, 130, 246, 0.05); }
 .btn-edit:hover { background: #3b82f6; color: white; }
-
 .btn-del { color: #ef4444; border-color: rgba(239, 68, 68, 0.3); background: rgba(239, 68, 68, 0.05); }
 .btn-del:hover { background: #ef4444; color: white; }
-
 .badge-custom { padding: 4px 10px; border-radius: 6px; font-weight: 600; background: #f1f5f9; color: #475569; font-size: 0.75rem; }
 
-/* --- STAT CARDS --- */
-.stat-card-new {
-    padding: 1.25rem;
-    border-radius: 16px;
-    background: white;
-    border: 1px solid #e2e8f0;
-    height: 100%;
-    transition: transform 0.2s;
-}
-.stat-icon {
-    width: 40px;
-    height: 40px;
-    border-radius: 10px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    margin-bottom: 10px;
-    font-size: 1.2rem;
-}
-
-/* --- SEARCH BOX --- */
+.stat-card-new { padding: 1.25rem; border-radius: 16px; background: white; border: 1px solid #e2e8f0; height: 100%; transition: transform 0.2s; }
+.stat-icon { width: 40px; height: 40px; border-radius: 10px; display: flex; align-items: center; justify-content: center; margin-bottom: 10px; font-size: 1.2rem; }
 .search-box-wrapper { position: relative; display: flex; align-items: center; }
 .search-box-wrapper .form-control { padding-left: 15px; border-radius: 12px; background: #f1f5f9; border: none; }
-
-/* --- TABLES --- */
-.table thead th {
-    text-transform: uppercase;
-    font-size: 0.7rem;
-    letter-spacing: 0.05em;
-    font-weight: 700;
-    color: #64748b;
-    padding: 15px;
-}
-
+.table thead th { text-transform: uppercase; font-size: 0.7rem; letter-spacing: 0.05em; font-weight: 700; color: #64748b; padding: 15px; }
 .chart-container { position: relative; height: 250px; width: 100%; }
-
-/* --- TOAST NOTIFICATION --- */
-#studio-toast {
-    position: fixed; top: 20px; right: 20px; z-index: 10000;
-    padding: 15px 25px; border-radius: 12px; background: var(--primary);
-    color: white; font-weight: bold; box-shadow: 0 10px 15px rgba(0,0,0,0.2);
-    display: none; animation: slideIn 0.3s ease forwards;
-}
-@keyframes slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
-
 .bg-light-custom { background-color: #f1f5f9 !important; }
-
-/* --- ADMIN & UTILS --- */
 .admin-only { display: none !important; }
 .is-admin .admin-only { display: block !important; }
 
-/* --- GLOBAL LOCKER --- */
-#globalBlocker {
-    position: fixed; 
-    top: 0; left: 0; right: 0; bottom: 0;
-    background: rgba(248, 250, 252, 0.95); 
-    backdrop-filter: blur(8px);
-    z-index: 2000; 
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
-    text-align: center;
-    padding: 20px;
-}
-
-.header-wrapper {
-    position: relative;
-    z-index: 2001; 
-    background: var(--bg-light); 
-    padding-bottom: 10px;
-}
-
-.logo-icon {
-    width: 40px; 
-    height: 40px; 
-    margin-right: 10px;
-}
+#globalBlocker { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(248, 250, 252, 0.95); backdrop-filter: blur(8px); z-index: 2000; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; padding: 20px; }
+.header-wrapper { position: relative; z-index: 2001; background: var(--bg-light); padding-bottom: 10px; }
+.logo-icon { width: 40px; height: 40px; margin-right: 10px; }
 
 @media (max-width: 576px) {
     .app-container { margin: 1rem auto; padding-left: 15px; padding-right: 15px; }
-    .nav-pills { 
-        display: flex; 
-        flex-wrap: nowrap; 
-        overflow-x: auto; 
-        -webkit-overflow-scrolling: touch; 
-        padding-bottom: 10px; 
-    }
-    .nav-pills::-webkit-scrollbar { display: none; }
+    .nav-pills { display: flex; flex-wrap: nowrap; overflow-x: auto; padding-bottom: 10px; }
     .card-body { padding: 1.25rem !important; }
     .result-display { padding: 1.5rem; }
     .result-display h2 { font-size: 2rem; }
-    .btn-action { padding: 8px 12px; font-size: 0.8rem; }
 }
 </style>
 </head>
 <body class="">
-
-<div id="studio-toast">Notifikasi</div>
 
 <div id="globalBlocker">
     <div class="p-4 bg-white shadow rounded-4 border" style="max-width: 350px; width: 100%;">
@@ -267,12 +224,44 @@ div:where(.swal2-container) input:where(.swal2-input) {
             </svg>
             <div>
                 <h2 class="fw-800 m-0 fs-4" style="letter-spacing: -0.5px;">Simpang 3D <span style="color:var(--primary)">Studio.</span></h2>
-                <p class="text-muted small m-0" style="font-size: 0.7rem;">Professional 3D Manager</p>
             </div>
         </div>
+
         <div class="d-flex align-items-center gap-2">
-            <span id="userEmailDisplay" class="small fw-bold text-muted d-none d-md-block"></span>
-            <button id="authBtn" class="btn btn-outline-dark btn-sm fw-bold" onclick="showAuthModal('login')">🔒 Masuk</button>
+            <div class="header-icon-wrapper">
+                <svg class="header-icon-svg" viewBox="0 0 24 24">
+                    <path d="M7 18c-1.1 0-1.99.9-1.99 2S5.9 22 7 22s2-.9 2-2-.9-2-2-2zM1 2v2h2l3.6 7.59-1.35 2.45c-.16.28-.25.61-.25.96 0 1.1.9 2 2 2h12v-2H7.42c-.14 0-.25-.11-.25-.25l.03-.12.9-1.63h7.45c.75 0 1.41-.41 1.75-1.03l3.58-6.49c.08-.14.12-.31.12-.48 0-.55-.45-1-1-1H5.21l-.94-2H1zm16 16c-1.1 0-1.99.9-1.99 2s.89 2 1.99 2 2-.9 2-2-.9-2-2-2z"/>
+                </svg>
+                <span class="cart-badge" id="cartCount">0</span>
+                
+                <div class="custom-popup" id="cartPopup">
+                    <div class="popup-header">Keranjang Pesanan</div>
+                    <div id="cartListPopup" style="max-height: 250px; overflow-y: auto;">
+                        <p class="text-center text-muted small my-3">Keranjang kosong</p>
+                    </div>
+                    <div class="d-flex justify-content-between border-top pt-2 mt-2">
+                        <small class="fw-bold">Total Est:</small>
+                        <small class="fw-bold text-success" id="cartTotalPopup">Rp 0</small>
+                    </div>
+                    <button class="btn btn-primary-studio w-100 mt-3 py-2 text-white shadow-sm" onclick="checkoutCart()">
+                        BELI / CHECKOUT
+                    </button>
+                </div>
+            </div>
+
+            <div class="header-icon-wrapper ms-2">
+                <svg class="header-icon-svg" viewBox="0 0 24 24">
+                    <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
+                </svg>
+                
+                <div class="custom-popup" id="profilePopup">
+                    <div class="popup-header">Profil Pengguna</div>
+                    <div id="profileDetails">
+                        <p class="text-center text-muted small">Memuat data...</p>
+                    </div>
+                    <button class="btn btn-outline-danger btn-sm w-100 mt-3 fw-bold" onclick="doFirebaseLogout()">Log Out</button>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -309,21 +298,18 @@ div:where(.swal2-container) input:where(.swal2-input) {
                                 <select id="materialSelect" class="form-select"></select>
                             </div>
                             <div class="col-md-3 col-6">
-                                <label class="form-label">Berat (gr)</label>
+                                <label class="form-label">Berat per Pcs (gr)</label>
                                 <input type="number" class="form-control" id="weight" placeholder="0">
                             </div>
                             <div class="col-md-3 col-6">
-                                <label class="form-label">Waktu (Jam:Menit)</label>
+                                <label class="form-label">Waktu per Pcs</label>
                                 <input type="time" class="form-control" id="time" value="01:00">
                             </div>
-                            <div class="col-md-3 col-6">
-                                <label class="form-label">Support (gr)</label>
-                                <input type="number" class="form-control" id="support" value="0">
+                            <div class="col-md-6">
+                                <label class="form-label">Jumlah Pesanan (Qty)</label>
+                                <input type="number" class="form-control" id="quantity" value="1" min="1">
                             </div>
-                            <div class="col-md-3 col-6">
-                                <label class="form-label">Waste (gr)</label>
-                                <input type="number" class="form-control" id="waste" value="0">
-                            </div>
+                            
                             <div class="col-md-6">
                                 <label class="form-label">Harga per Gram (Filamen)</label>
                                 <input class="form-control bg-light-custom fw-bold" id="priceGram" readonly>
@@ -354,7 +340,7 @@ div:where(.swal2-container) input:where(.swal2-input) {
                                 </select>
                             </div>
                             
-                            <div class="col-12 mb-3">
+                            <div class="col-12 mb-3 admin-only">
                                 <label class="form-label fw-bold">Status Pembayaran</label>
                                 <select id="paymentStatus" class="form-select border-success fw-bold text-success">
                                     <option value="LUNAS">LUNAS / PAID</option>
@@ -363,7 +349,10 @@ div:where(.swal2-container) input:where(.swal2-input) {
                             </div>
                         </div>
                         
-                        <button class="btn btn-primary-studio w-100 text-white mb-2 shadow-sm" onclick="calculateAndSave()">HITUNG & SIMPAN</button>
+                        <div class="d-flex gap-2 mb-2">
+                            <button class="btn btn-outline-primary-studio w-50 fw-bold" onclick="calculateOnly()">HITUNG</button>
+                            <button class="btn btn-primary-studio w-50 text-white shadow-sm" onclick="addToCart()">+ KERANJANG</button>
+                        </div>
                         
                         <button class="btn btn-dark w-100 border-0 py-2 fw-bold admin-only" onclick="exportPDF()">📄 CETAK INVOICE</button>
                         
@@ -578,13 +567,8 @@ const googleProvider = new GoogleAuthProvider();
 
 // --- VALIDASI REGEX ---
 const validateEmail = (email) => {
-    return String(email)
-      .toLowerCase()
-      .match(
-        /^(([^<>()[\]\\.,;:\s@"]+(\.[^<>()[\]\\.,;:\s@"]+)*)|.(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/
-      );
+    return String(email).toLowerCase().match(/^(([^<>()[\]\\.,;:\s@"]+(\.[^<>()[\]\\.,;:\s@"]+)*)|.(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/);
 };
-
 const validatePhone = (phone) => {
     const re = /^08[0-9]{8,11}$/; 
     return re.test(String(phone));
@@ -593,6 +577,7 @@ const validatePhone = (phone) => {
 // --- GLOBAL STATE ---
 let materialsData = [];
 let historyData = [];
+let cart = []; 
 let editIndex = -1; 
 let isEditMode = false;
 let currentEditingInv = ""; 
@@ -601,20 +586,25 @@ let lastCalculatedData = {};
 let performanceChart = null;
 let isAdmin = false; 
 let currentUser = null; 
+let currentUserData = null; 
 let unsubscribeOrders = null; 
 let isRegisterMode = false;
 
 // --- AUTH LISTENER & LOGIC ---
-onAuthStateChanged(auth, (user) => {
-    const authBtn = document.getElementById('authBtn');
-    const userDisplay = document.getElementById('userEmailDisplay');
+onAuthStateChanged(auth, async (user) => {
     const globalBlocker = document.getElementById('globalBlocker');
-    
     currentUser = user; 
-
     if (user) {
+        try {
+            const userSnap = await getDoc(doc(db, "users", user.uid));
+            if(userSnap.exists()) {
+                currentUserData = userSnap.data();
+                renderProfilePopup(currentUserData);
+            } else {
+                renderProfilePopup({ firstName: "User", email: user.email, phone: "-" });
+            }
+        } catch(e) { console.log(e); }
         globalBlocker.style.display = 'none';
-        userDisplay.innerText = user.displayName || user.email;
         const modalEl = document.getElementById('authModal');
         const modal = bootstrap.Modal.getInstance(modalEl);
         if(modal) modal.hide();
@@ -622,7 +612,6 @@ onAuthStateChanged(auth, (user) => {
         backdrops.forEach(bd => bd.remove());
         document.body.classList.remove('modal-open');
         document.body.style.overflow = '';
-
         if(user.email === 'admin@simpang.com') {
             isAdmin = true;
             document.body.classList.add('is-admin');
@@ -630,43 +619,154 @@ onAuthStateChanged(auth, (user) => {
             isAdmin = false;
             document.body.classList.remove('is-admin');
         }
-        authBtn.innerHTML = "🔓 Logout";
-        authBtn.classList.replace('btn-outline-dark', 'btn-danger');
-        authBtn.onclick = doFirebaseLogout; 
-        
         setupOrderListener(user);
     } else {
         globalBlocker.style.display = 'flex';
-        userDisplay.innerText = "";
+        renderProfilePopup(null); 
         isAdmin = false;
         document.body.classList.remove('is-admin');
-        authBtn.innerHTML = "🔒 Masuk";
-        authBtn.classList.replace('btn-danger', 'btn-outline-dark');
-        authBtn.onclick = () => showAuthModal('login'); 
-
         document.getElementById('authEmail').value = "";
         document.getElementById('authPass').value = "";
-        document.getElementById('authPassConfirm').value = "";
-        document.getElementById('regFirstName').value = "";
-        document.getElementById('regLastName').value = "";
-        document.getElementById('regPhone').value = "";
-
-        document.getElementById('discount').value = 0;
-        document.getElementById('taxActive').value = 0;
         calculate(); 
-
         if(unsubscribeOrders) unsubscribeOrders();
         historyData = [];
         renderHistory();
-
         const modalEl = document.getElementById('authModal');
         const modal = bootstrap.Modal.getInstance(modalEl);
         if(modal) modal.hide();
-        
         const calcTabBtn = document.querySelector('[data-bs-target="#calc"]');
         new bootstrap.Tab(calcTabBtn).show();
     }
 });
+
+// --- RENDER PROFILE POPUP ---
+window.renderProfilePopup = function(userData) {
+    const container = document.getElementById('profileDetails');
+    if(!userData) {
+        container.innerHTML = `<p class="text-center text-muted small">Silahkan Login</p>`;
+        return;
+    }
+    const name = (userData.firstName || "") + " " + (userData.lastName || "");
+    container.innerHTML = `
+        <div class="profile-info-row">
+            <span class="profile-label">NAMA</span>
+            <span class="profile-val">${name || 'User'}</span>
+        </div>
+        <div class="profile-info-row">
+            <span class="profile-label">EMAIL</span>
+            <span class="profile-val">${userData.email || '-'}</span>
+        </div>
+        <div class="profile-info-row">
+            <span class="profile-label">NO. TELEPON</span>
+            <span class="profile-val">${userData.phone || '-'}</span>
+        </div>
+    `;
+}
+
+// --- CART FUNCTIONS ---
+window.addToCart = function() {
+    if(!currentUser) return showAuthModal('login');
+    const weightVal = +document.getElementById('weight').value || 0;
+    if(weightVal <= 0) return Swal.fire({icon: 'warning', text: "Berat harus diisi!", position: 'center'});
+    const resultObj = calculate();
+    cart.push(resultObj);
+    updateCartUI();
+    Swal.fire({
+        icon: 'success',
+        title: 'Masuk Keranjang!',
+        text: `${resultObj.item || 'Item'} ditambahkan.`,
+        position: 'top-end',
+        showConfirmButton: false,
+        timer: 1000,
+        toast: true
+    });
+}
+
+window.updateCartUI = function() {
+    const countBadge = document.getElementById('cartCount');
+    const listPopup = document.getElementById('cartListPopup');
+    const totalPopup = document.getElementById('cartTotalPopup');
+    countBadge.innerText = cart.length;
+    if(cart.length === 0) {
+        listPopup.innerHTML = `<p class="text-center text-muted small my-3">Keranjang kosong</p>`;
+        totalPopup.innerText = rp(0);
+    } else {
+        listPopup.innerHTML = '';
+        let grandTotal = 0;
+        cart.forEach((item, index) => {
+            grandTotal += item.total;
+            listPopup.innerHTML += `
+                <div class="cart-item">
+                    <div>
+                        <div class="fw-bold">${item.item || 'No Name'}</div>
+                        <div class="text-muted" style="font-size:0.7rem">${item.details.qty}x | ${item.details.matName}</div>
+                    </div>
+                    <div class="text-end">
+                        <div class="fw-bold text-success">${rp(item.total)}</div>
+                        <a href="#" class="text-danger" style="font-size:0.7rem; text-decoration:none;" onclick="removeFromCart(${index})">Hapus</a>
+                    </div>
+                </div>
+            `;
+        });
+        totalPopup.innerText = rp(grandTotal);
+    }
+}
+
+window.removeFromCart = function(index) {
+    cart.splice(index, 1);
+    updateCartUI();
+}
+
+window.calculateOnly = function() {
+    calculate();
+}
+
+window.checkoutCart = async function() {
+    if(cart.length === 0) return Swal.fire('Keranjang Kosong', 'Tambahkan item terlebih dahulu.', 'warning');
+    if(!currentUser) return showAuthModal('login');
+
+    Swal.fire({
+        title: 'Memproses Pesanan...',
+        text: 'Mohon tunggu sebentar',
+        allowOutsideClick: false,
+        didOpen: () => Swal.showLoading()
+    });
+
+    try {
+        for (const item of cart) {
+            const timestamp = Date.now();
+            const randomSuffix = Math.floor(Math.random() * 10000).toString().padStart(4, '0');
+            const now = new Date();
+            const invId = `INV-${now.getFullYear()}${String(now.getMonth()+1).padStart(2,'0')}${String(now.getDate()).padStart(2,'0')}-${String(now.getHours()).padStart(2,'0')}${String(now.getMinutes()).padStart(2,'0')}${String(now.getSeconds()).padStart(2,'0')}-${randomSuffix}`;
+            
+            item.inv = invId;
+            item.timestamp = timestamp;
+            
+            await setDoc(doc(db, "orders", invId), item);
+        }
+        
+        cart = [];
+        updateCartUI();
+        
+        document.getElementById('customer').value = '';
+        document.getElementById('itemName').value = '';
+        document.getElementById('weight').value = '';
+        document.getElementById('quantity').value = '1';
+        generateInvoiceNum();
+
+        Swal.fire({
+            icon: 'success',
+            title: 'Pembelian Berhasil!',
+            text: 'Semua item telah diproses dan masuk ke Riwayat.',
+            timer: 2000,
+            showConfirmButton: false
+        });
+
+    } catch (error) {
+        console.error("Checkout Error:", error);
+        Swal.fire('Gagal', 'Terjadi kesalahan saat memproses pesanan: ' + error.message, 'error');
+    }
+}
 
 function setupOrderListener(user) {
     if(unsubscribeOrders) unsubscribeOrders();
@@ -700,7 +800,6 @@ window.toggleAuthMode = function() {
 
 function updateAuthModalUI() {
     const title = document.getElementById('authTitle');
-    const sub = document.getElementById('authSubtitle');
     const btn = document.getElementById('authSubmitBtn');
     const toggle = document.getElementById('authToggleText');
     const regFields = document.getElementById('registerFields');
@@ -787,7 +886,6 @@ window.handleAuthAction = function() {
                 else if (errorCode === 'auth/user-not-found') pesanError = "Email salah / Tidak terdaftar";
                 else if (errorCode === 'auth/invalid-email') pesanError = "Format Email salah";
                 else if (errorCode === 'auth/invalid-credential') pesanError = "Email atau Password salah";
-                else if (errorCode === 'auth/too-many-requests') pesanError = "Terlalu banyak percobaan. Coba lagi nanti.";
                 
                 Swal.fire({ icon: 'error', title: 'Gagal Masuk', text: pesanError, position: 'center', confirmButtonText: 'Coba Lagi' });
             });
@@ -843,6 +941,8 @@ window.doFirebaseLogout = function() {
     }).then((result) => {
         if (result.isConfirmed) {
             signOut(auth).then(() => {
+                cart = []; 
+                updateCartUI();
                 Swal.fire({ icon: 'success', title: 'Anda telah Logout', position: 'center', showConfirmButton: false, timer: 1500 });
             });
         }
@@ -941,35 +1041,15 @@ window.generateInvoiceNum = function(){
     return inv;
 }
 
-window.calculateAndSave = async function() {
-    if(!currentUser) return showAuthModal('login');
-    const weightVal = +document.getElementById('weight').value || 0;
-    if(weightVal <= 0) return Swal.fire({icon: 'warning', text: "Berat harus diisi!", position: 'center'});
-    const resultObj = calculate();
-    
-    if (isEditMode && currentEditingOwnerId) { resultObj.userId = currentEditingOwnerId; } 
-    else { resultObj.userId = currentUser.uid; resultObj.userEmail = currentUser.email; }
-    
-    await setDoc(doc(db, "orders", resultObj.inv), resultObj);
-    
-    Swal.fire({
-        icon: 'success',
-        title: 'Pesanan Disimpan!',
-        position: 'center',
-        showConfirmButton: false,
-        timer: 1500
-    });
-    
-    if (!isEditMode) { generateInvoiceNum(); document.getElementById('customer').value = ''; document.getElementById('itemName').value = ''; document.getElementById('weight').value = ''; } 
-    else { isEditMode = false; currentEditingInv = ""; currentEditingOwnerId = null; generateInvoiceNum(); const btn = document.querySelector('button[onclick="calculateAndSave()"]'); if(btn) btn.innerText = "HITUNG & SIMPAN"; }
-}
-
 function calculate(){
     const timeVal = document.getElementById('time').value;
     const [h, m] = timeVal.split(':').map(Number);
     const hours = h + (m/60);
     const s = JSON.parse(localStorage.getItem('setup_3d') || '{"depr":2100,"operator":2000,"watt":100,"kwh":1500,"maint":750, "profit":30, "risk":10}');
+    
+    // AMBIL INPUT
     const weightVal = +document.getElementById('weight').value || 0;
+    const qtyVal = +document.getElementById('quantity').value || 1;
     
     if(weightVal === 0) {
         document.getElementById('total').innerText = rp(0);
@@ -977,14 +1057,17 @@ function calculate(){
         return { inv: "", total: 0 }; 
     }
 
-    const supportVal = +document.getElementById('support').value || 0;
-    const wasteVal = +document.getElementById('waste').value || 0;
     const materialPrice = +document.getElementById('materialSelect').value || 0;
-    const totalWeight = weightVal + supportVal + wasteVal;
+    
+    // HITUNG TOTAL
+    const totalWeight = weightVal * qtyVal; // Berat per pcs * Qty
+    const totalHours = hours * qtyVal;      // Waktu per pcs * Qty
+    
     const matCost = totalWeight * (materialPrice / 1000);
-    const electric = ((s.watt||0) / 1000) * hours * (s.kwh||0);
-    const opCost = (hours * ((s.depr||0) + (s.operator||0) + (s.maint||0))) + electric;
+    const electric = ((s.watt||0) / 1000) * totalHours * (s.kwh||0);
+    const opCost = (totalHours * ((s.depr||0) + (s.operator||0) + (s.maint||0))) + electric;
     const hpp = matCost + opCost;
+    
     const profitVal = +document.getElementById('profit').value || 30;
     const riskVal = +document.getElementById('risk').value || 10;
     const subtotal = hpp + (hpp * profitVal / 100) + (hpp * riskVal / 100);
@@ -1006,7 +1089,28 @@ function calculate(){
     const matNameText = document.getElementById('materialSelect').options[document.getElementById('materialSelect').selectedIndex]?.text;
 
     lastCalculatedData = { inv: currentInv, total: grandTotal, status: payStatus, subtotal: subtotal, discAmount: discAmount, taxAmount: taxAmount, hpp: hpp, netProfit: netProfit };
-    return { inv: currentInv, cust: custName, item: itemName, total: grandTotal, status: payStatus, hpp: hpp, netProfit: netProfit, timestamp: Date.now(), details: { weight: weightVal, time: timeVal, support: supportVal, waste: wasteVal, profit: profitVal, risk: riskVal, discount: discPercent, tax: taxPercent, matName: matNameText } };
+    return { 
+        inv: currentInv, 
+        cust: custName, 
+        item: itemName, 
+        total: grandTotal, 
+        status: payStatus, 
+        hpp: hpp, 
+        netProfit: netProfit, 
+        timestamp: Date.now(), 
+        details: { 
+            weight: weightVal, 
+            time: timeVal, 
+            qty: qtyVal, // Simpan Qty
+            profit: profitVal, 
+            risk: riskVal, 
+            discount: discPercent, 
+            tax: taxPercent, 
+            matName: matNameText 
+        }, 
+        userId: (currentUser ? currentUser.uid : null), 
+        userEmail: (currentUser ? currentUser.email : null) 
+    };
 }
 
 window.renderHistory = function(){
@@ -1054,14 +1158,16 @@ window.loadFromHistory = function(invId){
     if(!item) return;
     isEditMode = true; currentEditingInv = invId; currentEditingOwnerId = item.userId; 
     document.getElementById('customer').value = item.cust; document.getElementById('itemName').value = item.item || ''; document.getElementById('invDisplay').innerText = item.inv;
-    document.getElementById('weight').value = item.details.weight; document.getElementById('time').value = item.details.time; document.getElementById('support').value = item.details.support; document.getElementById('waste').value = item.details.waste;
+    document.getElementById('weight').value = item.details.weight; document.getElementById('time').value = item.details.time;
+    // Load Qty
+    document.getElementById('quantity').value = item.details.qty || 1; 
+    
     document.getElementById('profit').value = item.details.profit; document.getElementById('risk').value = item.details.risk;
     document.getElementById('discount').value = item.details.discount || 0; document.getElementById('taxActive').value = item.details.tax || 0; document.getElementById('paymentStatus').value = item.status || 'BELUM LUNAS';
     const materialSelect = document.getElementById('materialSelect');
     for(let opt of materialSelect.options) { if(opt.text === item.details.matName) { materialSelect.value = opt.value; break; } }
     const calcTabBtn = document.querySelector('[data-bs-target="#calc"]'); if(calcTabBtn) { new bootstrap.Tab(calcTabBtn).show(); }
     updatePriceGram(); calculate(); 
-    const btn = document.querySelector('button[onclick="calculateAndSave()"]'); if(btn) btn.innerText = "UPDATE PESANAN";
 }
 
 window.deleteHistory = async function(invId){ if(confirm(`Hapus invoice ${invId}?`)) await deleteDoc(doc(db, "orders", invId)); }
@@ -1079,7 +1185,6 @@ function initChart(labels, profitData, hppData) {
     performanceChart = new Chart(ctx, { type: 'bar', data: { labels: labels, datasets: [ { label: 'Profit Bersih', data: profitData, backgroundColor: '#10b981', borderRadius: 5 }, { label: 'Modal (HPP)', data: hppData, backgroundColor: '#3b82f6', borderRadius: 5 } ] }, options: { responsive: true, maintainAspectRatio: false, scales: { y: { stacked: true, ticks: { callback: v => 'Rp ' + v.toLocaleString() } }, x: { stacked: true } } } });
 }
 
-// --- FUNGSI EXPORT PDF TERBARU (Layout Diperbaiki & Anti Tumpang Tindih) ---
 window.exportPDF = function() {
     const data = lastCalculatedData;
     if (!data.inv) return Swal.fire({ icon: 'warning', text: "Silahkan Hitung & Simpan data terlebih dahulu!", position: 'center' });
@@ -1107,8 +1212,6 @@ window.exportPDF = function() {
     doc.rect(0, 0, pageWidth, 5, 'F');
 
     y = 25;
-    
-    // Logo Text (Kiri)
     doc.setFont("helvetica", "bold");
     doc.setFontSize(20);
     doc.setTextColor(secondaryColor);
@@ -1116,14 +1219,12 @@ window.exportPDF = function() {
     doc.setTextColor(primaryColor);
     doc.text("Studio.", margin + 42, y);
 
-    // Subtitle
     y += 6;
     doc.setFont("helvetica", "normal");
     doc.setFontSize(9);
     doc.setTextColor(grayColor);
     doc.text("Professional 3D Printing Service", margin, y);
 
-    // INVOICE Text & Number (Kanan)
     y -= 6;
     doc.setFont("helvetica", "bold");
     doc.setFontSize(14);
@@ -1135,14 +1236,11 @@ window.exportPDF = function() {
     doc.setTextColor(grayColor);
     doc.text(`#${data.inv}`, pageWidth - margin, y, { align: "right" });
 
-    // 2. INFO GRID (Tagihan & Detail)
+    // 2. INFO GRID
     y = 50;
-    
-    // Grid Setup
     const leftColX = margin;
     const rightColX = pageWidth - margin;
     
-    // Label
     doc.setFontSize(8);
     doc.setFont("helvetica", "bold");
     doc.setTextColor(grayColor);
@@ -1150,13 +1248,10 @@ window.exportPDF = function() {
     doc.text("DETAIL PESANAN:", rightColX, y, { align: "right" });
 
     y += 5;
-
-    // Content Kiri (Customer)
     doc.setFontSize(11);
     doc.setTextColor(secondaryColor);
     doc.text(document.getElementById('customer').value || "Pelanggan Umum", leftColX, y + 2);
     
-    // Phone
     if(document.getElementById('regPhone') && document.getElementById('regPhone').value) {
         y += 5;
         doc.setFontSize(9);
@@ -1165,42 +1260,29 @@ window.exportPDF = function() {
         doc.text(document.getElementById('regPhone').value, leftColX, y + 2);
     }
 
-    // Content Kanan (Tanggal & Status) - Posisi y di-reset agar sejajar header
     y = 55; 
-    
-    // Tanggal
     doc.setFontSize(9);
     doc.setFont("helvetica", "normal");
     doc.setTextColor(secondaryColor);
     const today = new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
     doc.text(today, rightColX, y, { align: "right" });
 
-    // Status Badge (Dinamis tidak tumpang tindih)
     y += 6;
     const statusText = data.status || "BELUM LUNAS";
-    const statusColor = statusText === 'LUNAS' ? [22, 163, 74] : [234, 88, 12]; // Hijau / Orange
-    
+    const statusColor = statusText === 'LUNAS' ? [22, 163, 74] : [234, 88, 12]; 
     doc.setFontSize(8);
     doc.setFont("helvetica", "bold");
-    const badgeWidth = doc.getTextWidth(statusText) + 12; // Auto width + padding
+    const badgeWidth = doc.getTextWidth(statusText) + 12; 
     const badgeHeight = 7;
-    
-    // Gambar Kotak Badge
     doc.setFillColor(...statusColor);
     doc.roundedRect(rightColX - badgeWidth, y, badgeWidth, badgeHeight, 1.5, 1.5, 'F');
-    
-    // Teks dalam Badge
     doc.setTextColor(255, 255, 255);
     doc.text(statusText, rightColX - (badgeWidth/2), y + 4.5, { align: "center" });
 
-
     // 3. TABEL BARANG
     y = 85;
-    
-    // Header Tabel
     doc.setFillColor(lightGray);
     doc.rect(margin, y, pageWidth - (margin * 2), 10, 'F');
-    
     doc.setFontSize(8);
     doc.setFont("helvetica", "bold");
     doc.setTextColor(grayColor);
@@ -1208,43 +1290,37 @@ window.exportPDF = function() {
     doc.text("DETAIL MATERIAL", margin + 80, y + 6.5);
     doc.text("JUMLAH", pageWidth - margin - 5, y + 6.5, { align: "right" });
 
-    // Isi Tabel
     y += 18;
-    
-    // Nama Item
     doc.setFontSize(10);
     doc.setFont("helvetica", "bold");
     doc.setTextColor(secondaryColor);
     doc.text(document.getElementById('itemName').value || "Jasa 3D Printing", margin + 5, y);
     
-    // Detail Material
     doc.setFontSize(9);
     doc.setFont("helvetica", "normal");
     doc.setTextColor(grayColor);
     const matName = document.getElementById('materialSelect').options[document.getElementById('materialSelect').selectedIndex]?.text || "-";
     const weight = document.getElementById('weight').value || 0;
     const time = document.getElementById('time').value || "00:00";
-    
+    const qty = document.getElementById('quantity').value || 1;
+
     doc.text(`${matName}`, margin + 80, y);
     doc.setFontSize(8);
-    doc.text(`Berat: ${weight}gr | Waktu: ${time}`, margin + 80, y + 5);
-
-    // Harga
+    // Update PDF Detail
+    doc.text(`Berat/pcs: ${weight}gr | Qty: ${qty}`, margin + 80, y + 5);
+    
     doc.setFontSize(10);
     doc.setFont("helvetica", "bold");
     doc.setTextColor(secondaryColor);
     doc.text(rp(data.total), pageWidth - margin - 5, y, { align: "right" });
 
-    // Garis Penutup Tabel
     y += 15;
     drawLine(y);
 
-    // 4. TOTAL & SUMMARY (Posisi Kanan Bawah)
+    // 4. TOTAL
     y += 10;
     const sumXLabel = pageWidth - margin - 55;
     const sumXValue = pageWidth - margin - 5;
-
-    // Subtotal
     doc.setFontSize(9);
     doc.setFont("helvetica", "normal");
     doc.setTextColor(grayColor);
@@ -1252,10 +1328,9 @@ window.exportPDF = function() {
     doc.setTextColor(secondaryColor);
     doc.text(rp(data.subtotal || data.hpp), sumXValue, y, { align: "right" });
 
-    // Logic Diskon & Pajak
     if(data.discAmount > 0) {
         y += 6;
-        doc.setTextColor(239, 68, 68); // Merah
+        doc.setTextColor(239, 68, 68);
         doc.text(`Diskon (${document.getElementById('discount').value}%)`, sumXLabel, y);
         doc.text(`- ${rp(data.discAmount)}`, sumXValue, y, { align: "right" });
     }
@@ -1268,11 +1343,9 @@ window.exportPDF = function() {
         doc.text(`+ ${rp(data.taxAmount)}`, sumXValue, y, { align: "right" });
     }
 
-    // GRAND TOTAL BLOCK (Highlight)
     y += 8;
     doc.setFillColor(primaryColor);
     doc.roundedRect(sumXLabel - 5, y - 5, 65, 12, 2, 2, 'F');
-
     doc.setFontSize(11);
     doc.setFont("helvetica", "bold");
     doc.setTextColor(255, 255, 255);
@@ -1282,27 +1355,16 @@ window.exportPDF = function() {
     // 5. FOOTER
     const footerY = pageHeight - 25;
     drawLine(footerY);
-    
     doc.setFontSize(8);
     doc.setFont("helvetica", "normal");
     doc.setTextColor(grayColor);
     doc.text("Terima kasih telah mempercayakan proyek Anda kepada Simpang 3D Studio.", margin, footerY + 8);
     doc.text("Invoice ini sah dan diproses oleh komputer.", margin, footerY + 12);
-    
     doc.setTextColor(primaryColor);
     doc.text("Simpang 3D System v5.4", pageWidth - margin, footerY + 8, { align: "right" });
 
-    // Save
     doc.save(`Invoice_${data.inv}.pdf`);
-
-    Swal.fire({
-        icon: 'success', 
-        title: 'Invoice Berhasil Dicetak!', 
-        text: 'File PDF telah disimpan.', 
-        timer: 2000,
-        showConfirmButton: false,
-        position: 'center'
-    });
+    Swal.fire({ icon: 'success', title: 'Invoice Berhasil Dicetak!', text: 'File PDF telah disimpan.', timer: 2000, showConfirmButton: false, position: 'center' });
 }
 
 renderInventory(); renderHistory(); generateInvoiceNum();
