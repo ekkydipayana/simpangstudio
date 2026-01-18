@@ -36,8 +36,7 @@ body {
     position: relative; 
 }
 
-/* --- SWEETALERT Z-INDEX FIX (SUPER PENTING) --- */
-/* Memastikan loading/alert selalu di atas segalanya */
+/* --- SWEETALERT Z-INDEX FIX --- */
 div:where(.swal2-container) {
     z-index: 10000 !important;
 }
@@ -204,7 +203,7 @@ div:where(.swal2-container) input:where(.swal2-input) {
 #globalBlocker {
     position: fixed; 
     top: 0; left: 0; right: 0; bottom: 0;
-    background: rgba(248, 250, 252, 0.95); /* Sedikit lebih pekat */
+    background: rgba(248, 250, 252, 0.95); 
     backdrop-filter: blur(8px);
     z-index: 2000; 
     display: flex;
@@ -614,21 +613,16 @@ onAuthStateChanged(auth, (user) => {
     currentUser = user; 
 
     if (user) {
-        // === LOGGED IN ===
-        globalBlocker.style.display = 'none'; // BUKA GEMBOK
+        globalBlocker.style.display = 'none';
         userDisplay.innerText = user.displayName || user.email;
-        
-        // Safety: Pastikan modal tertutup jika user sudah login
         const modalEl = document.getElementById('authModal');
         const modal = bootstrap.Modal.getInstance(modalEl);
         if(modal) modal.hide();
-        // Hapus backdrop sisa jika ada (Fix untuk layar tumpuk)
         const backdrops = document.querySelectorAll('.modal-backdrop');
         backdrops.forEach(bd => bd.remove());
         document.body.classList.remove('modal-open');
         document.body.style.overflow = '';
 
-        // ADMIN CHECK (Hardcoded)
         if(user.email === 'admin@simpang.com') {
             isAdmin = true;
             document.body.classList.add('is-admin');
@@ -642,8 +636,7 @@ onAuthStateChanged(auth, (user) => {
         
         setupOrderListener(user);
     } else {
-        // === LOGGED OUT ===
-        globalBlocker.style.display = 'flex'; // KUNCI SEMUA
+        globalBlocker.style.display = 'flex';
         userDisplay.innerText = "";
         isAdmin = false;
         document.body.classList.remove('is-admin');
@@ -651,7 +644,6 @@ onAuthStateChanged(auth, (user) => {
         authBtn.classList.replace('btn-danger', 'btn-outline-dark');
         authBtn.onclick = () => showAuthModal('login'); 
 
-        // SECURITY: Clear All Inputs
         document.getElementById('authEmail').value = "";
         document.getElementById('authPass').value = "";
         document.getElementById('authPassConfirm').value = "";
@@ -659,7 +651,6 @@ onAuthStateChanged(auth, (user) => {
         document.getElementById('regLastName').value = "";
         document.getElementById('regPhone').value = "";
 
-        // Reset Sensitive Fields
         document.getElementById('discount').value = 0;
         document.getElementById('taxActive').value = 0;
         calculate(); 
@@ -735,14 +726,9 @@ window.handleAuthAction = function() {
     const pass = document.getElementById('authPass').value;
 
     if(!email || !pass) return Swal.fire({ icon: 'warning', text: "Email dan Password wajib diisi.", position: 'center' });
-    
-    // Validasi Email Basic
-    if(!validateEmail(email)) {
-        return Swal.fire({ icon: 'error', title: 'Email Tidak Valid', text: "Mohon gunakan format email yang benar (contoh@domain.com)", position: 'center' });
-    }
+    if(!validateEmail(email)) return Swal.fire({ icon: 'error', title: 'Email Tidak Valid', text: "Mohon gunakan format email yang benar (contoh@domain.com)", position: 'center' });
 
     if (isRegisterMode) {
-        // --- PROSES DAFTAR BARU ---
         const firstName = document.getElementById('regFirstName').value.trim();
         const lastName = document.getElementById('regLastName').value.trim();
         const phone = document.getElementById('regPhone').value.trim();
@@ -750,44 +736,32 @@ window.handleAuthAction = function() {
 
         if(!firstName || !lastName || !phone) return Swal.fire({ icon: 'warning', text: "Lengkapi data diri Anda (Nama & Telepon).", position: 'center' });
         
-        if(!validatePhone(phone)) {
-            return Swal.fire({ 
-                icon: 'error', 
-                title: 'Nomor Telepon Salah', 
-                text: "Gunakan nomor aktif format Indonesia (Awalan 08, panjang 10-13 angka).", 
-                position: 'center' 
-            });
-        }
+        if(!validatePhone(phone)) return Swal.fire({ icon: 'error', title: 'Nomor Telepon Salah', text: "Gunakan nomor aktif format Indonesia (Awalan 08, panjang 10-13 angka).", position: 'center' });
 
         if(pass !== confirmPass) return Swal.fire({ icon: 'error', text: "Konfirmasi password tidak cocok.", position: 'center' });
         if(pass.length < 6) return Swal.fire({ icon: 'warning', text: "Password minimal 6 karakter.", position: 'center' });
 
-        // LOADING SCREEN MENUTUPI MODAL (Mencegah Tumpuk)
         Swal.fire({ 
             title: 'Mendaftarkan Akun...', 
             text: 'Mohon jangan tutup halaman ini',
             allowOutsideClick: false,
-            backdrop: true, // Gelapkan layar total
+            backdrop: true, 
             didOpen: () => { Swal.showLoading() } 
         });
 
         createUserWithEmailAndPassword(auth, email, pass)
             .then(async (cred) => {
-                // 1. TUTUP MODAL SECARA PAKSA SAAT LOADING MASIH JALAN
                 const modalEl = document.getElementById('authModal');
                 const modal = bootstrap.Modal.getInstance(modalEl);
                 if(modal) modal.hide();
-                // Hapus backdrop bootstrap manual jika nyangkut
                 const backdrops = document.querySelectorAll('.modal-backdrop');
                 backdrops.forEach(bd => bd.remove());
                 
-                // 2. SIMPAN DATA (Tunggu sampai selesai)
                 await setDoc(doc(db, "users", cred.user.uid), {
                     firstName, lastName, phone, email,
                     createdAt: new Date()
                 });
                 
-                // 3. BARU TAMPILKAN SUKSES (Loading hilang otomatis diganti ini)
                 Swal.fire({ icon: 'success', title: 'Berhasil!', text: 'Akun berhasil dibuat. Selamat Datang!', position: 'center', showConfirmButton: false, timer: 1500 });
             })
             .catch((error) => {
@@ -796,12 +770,10 @@ window.handleAuthAction = function() {
                 Swal.fire({ icon: 'error', title: 'Gagal Daftar', text: msg, position: 'center' });
             });
     } else {
-        // --- PROSES LOGIN ---
         Swal.fire({ title: 'Masuk...', allowOutsideClick: false, didOpen: () => { Swal.showLoading() } });
         
         signInWithEmailAndPassword(auth, email, pass)
             .then(() => {
-                // Tutup modal paksa juga disini
                 const modalEl = document.getElementById('authModal');
                 const modal = bootstrap.Modal.getInstance(modalEl);
                 if(modal) modal.hide();
@@ -811,7 +783,6 @@ window.handleAuthAction = function() {
             .catch((error) => {
                 const errorCode = error.code;
                 let pesanError = "Terjadi kesalahan pada sistem.";
-                
                 if (errorCode === 'auth/wrong-password') pesanError = "Password salah";
                 else if (errorCode === 'auth/user-not-found') pesanError = "Email salah / Tidak terdaftar";
                 else if (errorCode === 'auth/invalid-email') pesanError = "Format Email salah";
@@ -823,18 +794,14 @@ window.handleAuthAction = function() {
     }
 }
 
-// --- GOOGLE LOGIN ---
 window.doGoogleLogin = function() {
     signInWithPopup(auth, googleProvider)
         .then(async (result) => {
             const user = result.user;
-            
-            // 1. TUTUP MODAL LOGIN SEGERA
             const modalEl = document.getElementById('authModal');
             const modal = bootstrap.Modal.getInstance(modalEl);
             if(modal) modal.hide();
 
-            // 2. CEK APAKAH USER BARU
             const userDoc = await getDoc(doc(db, "users", user.uid));
             
             if(!userDoc.exists()) {
@@ -884,11 +851,6 @@ window.doFirebaseLogout = function() {
 
 // --- UTILITY & CORE FUNCTIONS ---
 const rp = n => 'Rp ' + (Math.round(n) || 0).toLocaleString('id-ID');
-window.showNotification = function(msg = "Data Berhasil Disimpan! ✅") {
-    const toast = document.getElementById('studio-toast');
-    toast.innerText = msg; toast.style.display = 'block';
-    setTimeout(() => { toast.style.display = 'none'; }, 3000);
-}
 
 onSnapshot(collection(db, "materials"), (snapshot) => {
     materialsData = [];
@@ -1117,14 +1079,229 @@ function initChart(labels, profitData, hppData) {
     performanceChart = new Chart(ctx, { type: 'bar', data: { labels: labels, datasets: [ { label: 'Profit Bersih', data: profitData, backgroundColor: '#10b981', borderRadius: 5 }, { label: 'Modal (HPP)', data: hppData, backgroundColor: '#3b82f6', borderRadius: 5 } ] }, options: { responsive: true, maintainAspectRatio: false, scales: { y: { stacked: true, ticks: { callback: v => 'Rp ' + v.toLocaleString() } }, x: { stacked: true } } } });
 }
 
-window.exportPDF = function(){
-    const { jsPDF } = window.jspdf; const doc = new jsPDF('p', 'mm', 'a4'); calculate(); const data = lastCalculatedData; 
-    if(!data.inv) return Swal.fire({icon: 'warning', text: "Silahkan Hitung & Simpan data terlebih dahulu!", position: 'center'});
+// --- FUNGSI EXPORT PDF TERBARU (Layout Diperbaiki & Anti Tumpang Tindih) ---
+window.exportPDF = function() {
+    const data = lastCalculatedData;
+    if (!data.inv) return Swal.fire({ icon: 'warning', text: "Silahkan Hitung & Simpan data terlebih dahulu!", position: 'center' });
+
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF('p', 'mm', 'a4');
+    const pageWidth = doc.internal.pageSize.getWidth();
+    const pageHeight = doc.internal.pageSize.getHeight();
     
-    doc.setFontSize(16); doc.text("SIMPANG STUDIO INVOICE", 15, 20); doc.setFontSize(12); doc.text("Invoice: " + data.inv, 15, 30); doc.text("Customer: " + (document.getElementById('customer').value || "Pelanggan"), 15, 40); doc.text("Total: " + rp(data.total), 15, 50); doc.text("Status: " + data.status, 15, 60); doc.save(`${data.inv}.pdf`);
+    // --- VARIABLES & THEME ---
+    const primaryColor = "#10b981"; // Emerald Green
+    const secondaryColor = "#1e293b"; // Dark Slate
+    const grayColor = "#64748b";
+    const lightGray = "#f8fafc";
+    const margin = 15;
+    let y = 0; 
+
+    const drawLine = (yPos) => {
+        doc.setDrawColor(226, 232, 240);
+        doc.line(margin, yPos, pageWidth - margin, yPos);
+    };
+
+    // 1. HEADER BAR
+    doc.setFillColor(primaryColor);
+    doc.rect(0, 0, pageWidth, 5, 'F');
+
+    y = 25;
     
+    // Logo Text (Kiri)
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(20);
+    doc.setTextColor(secondaryColor);
+    doc.text("Simpang 3D", margin, y);
+    doc.setTextColor(primaryColor);
+    doc.text("Studio.", margin + 42, y);
+
+    // Subtitle
+    y += 6;
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(9);
+    doc.setTextColor(grayColor);
+    doc.text("Professional 3D Printing Service", margin, y);
+
+    // INVOICE Text & Number (Kanan)
+    y -= 6;
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(14);
+    doc.setTextColor(secondaryColor);
+    doc.text("INVOICE", pageWidth - margin, y, { align: "right" });
+    
+    y += 7;
+    doc.setFontSize(10);
+    doc.setTextColor(grayColor);
+    doc.text(`#${data.inv}`, pageWidth - margin, y, { align: "right" });
+
+    // 2. INFO GRID (Tagihan & Detail)
+    y = 50;
+    
+    // Grid Setup
+    const leftColX = margin;
+    const rightColX = pageWidth - margin;
+    
+    // Label
+    doc.setFontSize(8);
+    doc.setFont("helvetica", "bold");
+    doc.setTextColor(grayColor);
+    doc.text("TAGIHAN KEPADA:", leftColX, y);
+    doc.text("DETAIL PESANAN:", rightColX, y, { align: "right" });
+
+    y += 5;
+
+    // Content Kiri (Customer)
+    doc.setFontSize(11);
+    doc.setTextColor(secondaryColor);
+    doc.text(document.getElementById('customer').value || "Pelanggan Umum", leftColX, y + 2);
+    
+    // Phone
+    if(document.getElementById('regPhone') && document.getElementById('regPhone').value) {
+        y += 5;
+        doc.setFontSize(9);
+        doc.setFont("helvetica", "normal");
+        doc.setTextColor(grayColor);
+        doc.text(document.getElementById('regPhone').value, leftColX, y + 2);
+    }
+
+    // Content Kanan (Tanggal & Status) - Posisi y di-reset agar sejajar header
+    y = 55; 
+    
+    // Tanggal
+    doc.setFontSize(9);
+    doc.setFont("helvetica", "normal");
+    doc.setTextColor(secondaryColor);
+    const today = new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
+    doc.text(today, rightColX, y, { align: "right" });
+
+    // Status Badge (Dinamis tidak tumpang tindih)
+    y += 6;
+    const statusText = data.status || "BELUM LUNAS";
+    const statusColor = statusText === 'LUNAS' ? [22, 163, 74] : [234, 88, 12]; // Hijau / Orange
+    
+    doc.setFontSize(8);
+    doc.setFont("helvetica", "bold");
+    const badgeWidth = doc.getTextWidth(statusText) + 12; // Auto width + padding
+    const badgeHeight = 7;
+    
+    // Gambar Kotak Badge
+    doc.setFillColor(...statusColor);
+    doc.roundedRect(rightColX - badgeWidth, y, badgeWidth, badgeHeight, 1.5, 1.5, 'F');
+    
+    // Teks dalam Badge
+    doc.setTextColor(255, 255, 255);
+    doc.text(statusText, rightColX - (badgeWidth/2), y + 4.5, { align: "center" });
+
+
+    // 3. TABEL BARANG
+    y = 85;
+    
+    // Header Tabel
+    doc.setFillColor(lightGray);
+    doc.rect(margin, y, pageWidth - (margin * 2), 10, 'F');
+    
+    doc.setFontSize(8);
+    doc.setFont("helvetica", "bold");
+    doc.setTextColor(grayColor);
+    doc.text("DESKRIPSI", margin + 5, y + 6.5);
+    doc.text("DETAIL MATERIAL", margin + 80, y + 6.5);
+    doc.text("JUMLAH", pageWidth - margin - 5, y + 6.5, { align: "right" });
+
+    // Isi Tabel
+    y += 18;
+    
+    // Nama Item
+    doc.setFontSize(10);
+    doc.setFont("helvetica", "bold");
+    doc.setTextColor(secondaryColor);
+    doc.text(document.getElementById('itemName').value || "Jasa 3D Printing", margin + 5, y);
+    
+    // Detail Material
+    doc.setFontSize(9);
+    doc.setFont("helvetica", "normal");
+    doc.setTextColor(grayColor);
+    const matName = document.getElementById('materialSelect').options[document.getElementById('materialSelect').selectedIndex]?.text || "-";
+    const weight = document.getElementById('weight').value || 0;
+    const time = document.getElementById('time').value || "00:00";
+    
+    doc.text(`${matName}`, margin + 80, y);
+    doc.setFontSize(8);
+    doc.text(`Berat: ${weight}gr | Waktu: ${time}`, margin + 80, y + 5);
+
+    // Harga
+    doc.setFontSize(10);
+    doc.setFont("helvetica", "bold");
+    doc.setTextColor(secondaryColor);
+    doc.text(rp(data.total), pageWidth - margin - 5, y, { align: "right" });
+
+    // Garis Penutup Tabel
+    y += 15;
+    drawLine(y);
+
+    // 4. TOTAL & SUMMARY (Posisi Kanan Bawah)
+    y += 10;
+    const sumXLabel = pageWidth - margin - 55;
+    const sumXValue = pageWidth - margin - 5;
+
+    // Subtotal
+    doc.setFontSize(9);
+    doc.setFont("helvetica", "normal");
+    doc.setTextColor(grayColor);
+    doc.text("Subtotal", sumXLabel, y);
+    doc.setTextColor(secondaryColor);
+    doc.text(rp(data.subtotal || data.hpp), sumXValue, y, { align: "right" });
+
+    // Logic Diskon & Pajak
+    if(data.discAmount > 0) {
+        y += 6;
+        doc.setTextColor(239, 68, 68); // Merah
+        doc.text(`Diskon (${document.getElementById('discount').value}%)`, sumXLabel, y);
+        doc.text(`- ${rp(data.discAmount)}`, sumXValue, y, { align: "right" });
+    }
+
+    if(data.taxAmount > 0) {
+        y += 6;
+        doc.setTextColor(grayColor);
+        doc.text(`PPN (${document.getElementById('taxActive').value}%)`, sumXLabel, y);
+        doc.setTextColor(secondaryColor);
+        doc.text(`+ ${rp(data.taxAmount)}`, sumXValue, y, { align: "right" });
+    }
+
+    // GRAND TOTAL BLOCK (Highlight)
+    y += 8;
+    doc.setFillColor(primaryColor);
+    doc.roundedRect(sumXLabel - 5, y - 5, 65, 12, 2, 2, 'F');
+
+    doc.setFontSize(11);
+    doc.setFont("helvetica", "bold");
+    doc.setTextColor(255, 255, 255);
+    doc.text("TOTAL BAYAR", sumXLabel, y + 2.5);
+    doc.text(rp(data.total), sumXValue, y + 2.5, { align: "right" });
+
+    // 5. FOOTER
+    const footerY = pageHeight - 25;
+    drawLine(footerY);
+    
+    doc.setFontSize(8);
+    doc.setFont("helvetica", "normal");
+    doc.setTextColor(grayColor);
+    doc.text("Terima kasih telah mempercayakan proyek Anda kepada Simpang 3D Studio.", margin, footerY + 8);
+    doc.text("Invoice ini sah dan diproses oleh komputer.", margin, footerY + 12);
+    
+    doc.setTextColor(primaryColor);
+    doc.text("Simpang 3D System v5.4", pageWidth - margin, footerY + 8, { align: "right" });
+
+    // Save
+    doc.save(`Invoice_${data.inv}.pdf`);
+
     Swal.fire({
-        icon: 'info', title: 'Invoice Dicetak', text: 'File PDF telah diunduh.', position: 'center', confirmButtonText: 'OK'
+        icon: 'success', 
+        title: 'Invoice Berhasil Dicetak!', 
+        text: 'File PDF telah disimpan.', 
+        timer: 2000,
+        showConfirmButton: false,
+        position: 'center'
     });
 }
 
