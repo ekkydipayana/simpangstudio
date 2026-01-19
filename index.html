@@ -28,12 +28,18 @@ body {
     font-family: 'Inter', sans-serif; 
     color: #1e293b;
     -webkit-font-smoothing: antialiased; 
+    /* FIX MOBILE CUT OFF */
+    overflow-x: hidden;
+    width: 100%;
 }
 
 .app-container { 
     max-width: 1000px; 
     margin: 2rem auto; 
     position: relative; 
+    /* FIX MOBILE WIDTH */
+    width: 100%;
+    overflow-x: hidden;
 }
 
 /* --- MARKETPLACE HEADER STYLES --- */
@@ -122,7 +128,7 @@ body {
     to { opacity: 1; transform: translateY(0); }
 }
 
-/* --- COLOR PALETTE STYLES (NEW) --- */
+/* --- COLOR PALETTE STYLES --- */
 .color-palette-container {
     display: flex;
     flex-wrap: wrap;
@@ -156,7 +162,6 @@ body {
     box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.2);
 }
 
-/* Tooltip text on hover for colors */
 .color-swatch::after {
     content: attr(title);
     position: absolute;
@@ -175,26 +180,6 @@ body {
 }
 .color-swatch:hover::after {
     opacity: 1;
-}
-
-.btn-add-color {
-    width: 28px;
-    height: 28px;
-    border-radius: 50%;
-    border: 2px dashed #94a3b8;
-    background: transparent;
-    color: #94a3b8;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-weight: bold;
-    cursor: pointer;
-    font-size: 1.2rem;
-    line-height: 1;
-}
-.btn-add-color:hover {
-    border-color: var(--primary);
-    color: var(--primary);
 }
 
 /* --- EXISTING STYLES --- */
@@ -228,7 +213,7 @@ div:where(.swal2-container) input:where(.swal2-input) { border-radius: 10px !imp
 .form-control, .form-select { border-radius: 10px; padding: 10px 14px; border: 1px solid #e2e8f0; }
 .form-control:focus, .form-select:focus { border-color: var(--primary); box-shadow: 0 0 0 4px rgba(16, 185, 129, 0.1); }
 
-/* --- UPDATED BUTTONS --- */
+/* --- BUTTONS --- */
 .btn-primary-studio { 
     background: var(--primary); 
     border: 2px solid var(--primary); 
@@ -293,6 +278,7 @@ div:where(.swal2-container) input:where(.swal2-input) { border-radius: 10px !imp
         padding-bottom: 10px; 
         justify-content: flex-start;
         -webkit-overflow-scrolling: touch;
+        scroll-behavior: smooth; /* Smooth scroll for auto-center */
     }
     
     .card-body { padding: 1.25rem !important; }
@@ -721,6 +707,20 @@ let currentUserData = null;
 let unsubscribeOrders = null; 
 let isRegisterMode = false;
 
+// --- TAB AUTO CENTER LOGIC (MOBILE ONLY) ---
+document.querySelectorAll('.nav-link').forEach(tab => {
+    tab.addEventListener('click', (e) => {
+        // Cek lebar layar (hanya jalankan jika di HP/Layar kecil < 576px)
+        if (window.innerWidth <= 576) {
+            const navPills = document.getElementById('mainTabs');
+            const target = e.target;
+            // Hitung posisi tengah
+            const scrollLeft = target.offsetLeft - (navPills.clientWidth / 2) + (target.clientWidth / 2);
+            navPills.scrollTo({ left: scrollLeft, behavior: 'smooth' });
+        }
+    });
+});
+
 // --- SINKRONISASI WAKTU (BARU) ---
 window.syncTime = function() {
     let h = document.getElementById('t_hour').value;
@@ -777,6 +777,13 @@ onAuthStateChanged(auth, async (user) => {
                 // AUTOFILL CUSTOMER NAME
                 const fullName = currentUserData.firstName + (currentUserData.lastName ? " " + currentUserData.lastName : "");
                 document.getElementById('customer').value = fullName;
+
+                // --- LOAD SAVED CART (PERSISTENCE) ---
+                if(currentUserData.savedCart) {
+                    cart = currentUserData.savedCart;
+                    updateCartUI();
+                }
+
             } else {
                 const nameFromEmail = user.email.split('@')[0];
                 renderProfilePopup({ firstName: nameFromEmail, email: user.email, phone: "-" });
@@ -807,6 +814,8 @@ onAuthStateChanged(auth, async (user) => {
         document.getElementById('authEmail').value = "";
         document.getElementById('authPass').value = "";
         document.getElementById('customer').value = ""; // Clear on logout
+        cart = []; // Reset cart memory
+        updateCartUI();
         calculate(); 
         if(unsubscribeOrders) unsubscribeOrders();
         historyData = [];
@@ -818,6 +827,13 @@ onAuthStateChanged(auth, async (user) => {
         new bootstrap.Tab(calcTabBtn).show();
     }
 });
+
+// --- HELPER SAVE CART TO DB ---
+async function saveCartDB() {
+    if(currentUser) {
+        await setDoc(doc(db, "users", currentUser.uid), { savedCart: cart }, { merge: true });
+    }
+}
 
 // --- RENDER PROFILE POPUP ---
 window.renderProfilePopup = function(userData) {
@@ -850,7 +866,7 @@ window.renderProfilePopup = function(userData) {
     `;
 }
 
-// --- CART FUNCTIONS (UPDATED: STACKING & SWEETALERT) ---
+// --- CART FUNCTIONS (UPDATED: STACKING & SWEETALERT & DB SYNC) ---
 window.addToCart = function() {
     if(!currentUser) return showAuthModal('login');
     const weightVal = +document.getElementById('weight').value || 0;
@@ -878,8 +894,8 @@ window.addToCart = function() {
     }
 
     updateCartUI();
+    saveCartDB(); // SAVE TO DB
     
-    // UPDATE: SweetAlert Center Standard
     Swal.fire({
         icon: 'success',
         title: 'Berhasil!',
@@ -929,6 +945,7 @@ window.updateCartUI = function() {
 window.removeFromCart = function(index) {
     cart.splice(index, 1);
     updateCartUI();
+    saveCartDB(); // SAVE TO DB
 }
 
 window.calculateOnly = function() {
@@ -1063,6 +1080,7 @@ window.checkoutCart = async function() {
         
         cart = [];
         updateCartUI();
+        saveCartDB(); // CLEAR DB CART
         
         // REFILL NAME AFTER CHECKOUT
         if(currentUserData) {
@@ -1339,7 +1357,7 @@ window.loadMaterialSelect = function(){
     updatePriceGram();
 }
 
-// --- NEW FUNCTION: RENDER CIRCLE PALETTE ---
+// --- UPDATED: RENDER CIRCLE PALETTE (NO ADD BUTTON) ---
 window.renderColorPalette = function(colorString) {
     const container = document.getElementById('colorPaletteContainer');
     container.innerHTML = '';
@@ -1363,16 +1381,10 @@ window.renderColorPalette = function(colorString) {
         container.appendChild(circle);
     });
 
-    // Add "+" Button
-    const addBtn = document.createElement('div');
-    addBtn.className = 'btn-add-color';
-    addBtn.innerText = '+';
-    addBtn.onclick = addNewColor;
-    addBtn.title = "Tambah Warna Lain";
-    container.appendChild(addBtn);
+    // BUTTON TAMBAH MANUAL DIHAPUS SESUAI PERMINTAAN
 }
 
-// --- NEW FUNCTION: SELECT COLOR CIRCLE ---
+// --- SELECT COLOR CIRCLE ---
 window.selectColor = function(colorName, el) {
     // Update hidden input
     document.getElementById('selectedColorValue').value = colorName;
@@ -1387,38 +1399,6 @@ window.selectColor = function(colorName, el) {
     
     // Trigger calculation updates
     calculate();
-}
-
-// --- NEW FUNCTION: ADD NEW COLOR MANUALLY ---
-window.addNewColor = async function() {
-    const { value: newColor } = await Swal.fire({
-        title: 'Tambah Warna Baru',
-        input: 'text',
-        inputLabel: 'Nama Warna (Contoh: Ungu, Orange)',
-        inputPlaceholder: 'Masukkan nama warna...',
-        showCancelButton: true
-    });
-
-    if (newColor) {
-        const container = document.getElementById('colorPaletteContainer');
-        // Remove Add Button temporary
-        const addBtn = container.querySelector('.btn-add-color');
-        if(addBtn) addBtn.remove();
-        
-        // Add new circle
-        const hex = mapColorToHex(newColor);
-        const circle = document.createElement('div');
-        circle.className = 'color-swatch active'; // Auto select
-        circle.style.backgroundColor = hex;
-        circle.title = newColor;
-        circle.onclick = function() { selectColor(newColor, this); };
-        
-        container.appendChild(circle);
-        container.appendChild(addBtn); // Put back button
-        
-        // Auto Select logic
-        selectColor(newColor, circle);
-    }
 }
 
 window.updatePriceGram = function(){ 
@@ -1437,8 +1417,6 @@ window.updatePriceGram = function(){
         renderColorPalette(colorString);
         colorContainer.style.display = 'block';
     } else {
-        // If no colors defined, show empty palette or hide? 
-        // Showing palette with just "+" button if desired, but let's assume always allow adding
         renderColorPalette(""); 
         colorContainer.style.display = 'block';
     }
@@ -1661,7 +1639,7 @@ window.loadFromHistory = function(invId){
              newCircle.style.backgroundColor = hex;
              newCircle.title = item.details.color;
              newCircle.onclick = function() { selectColor(item.details.color, this); };
-             container.insertBefore(newCircle, container.lastChild); // Insert before + button
+             container.appendChild(newCircle); 
              document.getElementById('selectedColorValue').value = item.details.color;
         }
     }
