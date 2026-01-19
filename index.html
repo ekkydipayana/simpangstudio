@@ -301,10 +301,17 @@ div:where(.swal2-container) input:where(.swal2-input) { border-radius: 10px !imp
                                 <label class="form-label">Berat per Pcs (gr)</label>
                                 <input type="number" class="form-control" id="weight" placeholder="0">
                             </div>
+                            
                             <div class="col-md-3 col-6">
-                                <label class="form-label">Waktu per Pcs</label>
-                                <input type="time" class="form-control" id="time" value="01:00">
+                                <label class="form-label">Waktu (Jam : Mnt)</label>
+                                <div class="input-group">
+                                    <input type="number" class="form-control px-1 text-center" id="t_hour" placeholder="Jam" value="01" min="0" oninput="syncTime()">
+                                    <span class="input-group-text px-1 fw-bold">:</span>
+                                    <input type="number" class="form-control px-1 text-center" id="t_min" placeholder="Mnt" value="00" min="0" max="59" oninput="syncTime()">
+                                </div>
+                                <input type="hidden" id="time" value="01:00">
                             </div>
+
                             <div class="col-md-6">
                                 <label class="form-label">Jumlah Pesanan (Qty)</label>
                                 <input type="number" class="form-control" id="quantity" value="1" min="1">
@@ -596,6 +603,23 @@ let currentUser = null;
 let currentUserData = null; 
 let unsubscribeOrders = null; 
 let isRegisterMode = false;
+
+// --- SINKRONISASI WAKTU (BARU) ---
+window.syncTime = function() {
+    let h = document.getElementById('t_hour').value;
+    let m = document.getElementById('t_min').value;
+    
+    // Pastikan nilai tidak kosong
+    if (!h) h = '0';
+    if (!m) m = '0';
+    
+    // Pastikan 2 digit (01 bukan 1)
+    if(h.length < 2) h = '0' + h;
+    if(m.length < 2) m = '0' + m;
+    
+    // Update input hidden yang dipakai program
+    document.getElementById('time').value = h + ':' + m;
+}
 
 // --- AUTH LISTENER & LOGIC ---
 onAuthStateChanged(auth, async (user) => {
@@ -1317,7 +1341,16 @@ window.loadFromHistory = function(invId){
     if(!item) return;
     isEditMode = true; currentEditingInv = invId; currentEditingOwnerId = item.userId; 
     document.getElementById('customer').value = item.cust; document.getElementById('itemName').value = item.item || ''; document.getElementById('invDisplay').innerText = item.inv;
-    document.getElementById('weight').value = item.details.weight; document.getElementById('time').value = item.details.time;
+    document.getElementById('weight').value = item.details.weight; 
+    
+    // UPDATE LOGIC WAKTU: Sinkronkan input angka dengan data history
+    document.getElementById('time').value = item.details.time;
+    if(item.details.time) {
+        const [hh, mm] = item.details.time.split(':');
+        document.getElementById('t_hour').value = parseInt(hh);
+        document.getElementById('t_min').value = parseInt(mm);
+    }
+
     document.getElementById('quantity').value = item.details.qty || 1; 
     
     document.getElementById('profit').value = item.details.profit; document.getElementById('risk').value = item.details.risk;
