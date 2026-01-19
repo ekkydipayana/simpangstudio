@@ -122,9 +122,98 @@ body {
     to { opacity: 1; transform: translateY(0); }
 }
 
+/* --- COLOR PALETTE STYLES (NEW) --- */
+.color-palette-container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 5px;
+    padding: 5px;
+    background: #fff;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+}
+
+.color-swatch {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    cursor: pointer;
+    border: 2px solid #e2e8f0;
+    position: relative;
+    transition: transform 0.2s, box-shadow 0.2s;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.color-swatch:hover {
+    transform: scale(1.1);
+    z-index: 2;
+}
+
+.color-swatch.active {
+    border: 2px solid var(--primary);
+    transform: scale(1.15);
+    box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.2);
+}
+
+/* Tooltip text on hover for colors */
+.color-swatch::after {
+    content: attr(title);
+    position: absolute;
+    bottom: 120%;
+    left: 50%;
+    transform: translateX(-50%);
+    background: #1e293b;
+    color: white;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 0.65rem;
+    white-space: nowrap;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s;
+}
+.color-swatch:hover::after {
+    opacity: 1;
+}
+
+.btn-add-color {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    border: 2px dashed #94a3b8;
+    background: transparent;
+    color: #94a3b8;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    cursor: pointer;
+    font-size: 1.2rem;
+    line-height: 1;
+}
+.btn-add-color:hover {
+    border-color: var(--primary);
+    color: var(--primary);
+}
+
 /* --- EXISTING STYLES --- */
 div:where(.swal2-container) { z-index: 10000 !important; }
 div:where(.swal2-container) input:where(.swal2-input) { border-radius: 10px !important; border: 1px solid #e2e8f0 !important; font-size: 1rem !important; margin: 1em 2em 3px !important; }
+
+@media (max-width: 576px) {
+    div:where(.swal2-popup) {
+        width: 90% !important;
+        padding: 1em !important;
+        font-size: 0.9rem !important;
+    }
+    div:where(.swal2-title) {
+        font-size: 1.3rem !important;
+    }
+    div:where(.swal2-html-container) {
+        font-size: 0.9rem !important;
+    }
+}
 
 .card { border: none; border-radius: 16px; box-shadow: var(--card-shadow); background: #ffffff; overflow: hidden; margin-bottom: 1.5rem; }
 .nav-pills { background: #e2e8f0; padding: 6px; border-radius: 12px; }
@@ -196,10 +285,30 @@ div:where(.swal2-container) input:where(.swal2-input) { border-radius: 10px !imp
 
 @media (max-width: 576px) {
     .app-container { margin: 1rem auto; padding-left: 15px; padding-right: 15px; }
-    .nav-pills { display: flex; flex-wrap: nowrap; overflow-x: auto; padding-bottom: 10px; }
+    
+    .nav-pills { 
+        display: flex; 
+        flex-wrap: nowrap; 
+        overflow-x: auto; 
+        padding-bottom: 10px; 
+        justify-content: flex-start;
+        -webkit-overflow-scrolling: touch;
+    }
+    
     .card-body { padding: 1.25rem !important; }
     .result-display { padding: 1.5rem; }
     .result-display h2 { font-size: 2rem; }
+
+    .custom-popup {
+        width: 85vw;
+        max-width: 320px;
+        right: -50px;
+        top: 110%;
+    }
+    
+    .header-wrapper h2 {
+        font-size: 1.2rem !important;
+    }
 }
 </style>
 </head>
@@ -297,6 +406,13 @@ div:where(.swal2-container) input:where(.swal2-input) { border-radius: 10px !imp
                                 <label class="form-label">Pilih Material</label>
                                 <select id="materialSelect" class="form-select"></select>
                             </div>
+                            <div class="col-md-6" id="colorSelectContainer" style="display:none;">
+                                <label class="form-label">Pilih Warna (Palette)</label>
+                                <input type="hidden" id="selectedColorValue">
+                                <div id="colorPaletteContainer" class="color-palette-container">
+                                    </div>
+                            </div>
+
                             <div class="col-md-3 col-6">
                                 <label class="form-label">Berat per Pcs (gr)</label>
                                 <input type="number" class="form-control" id="weight" placeholder="0">
@@ -444,8 +560,9 @@ div:where(.swal2-container) input:where(.swal2-input) { border-radius: 10px !imp
                 <h5 class="fw-bold mb-4 text-success">Manajemen Filamen</h5>
                 <div class="row g-2 mb-4 bg-light-custom p-3 rounded-4">
                     <div class="col-md-6"><input id="matName" class="form-control" placeholder="Nama Filamen (PLA Black)"></div>
-                    <div class="col-md-4"><input id="matPrice" type="number" class="form-control" placeholder="Harga per Kg"></div>
-                    <div class="col-md-2"><button id="btnSaveMat" class="btn btn-primary-studio w-100 text-white" onclick="saveMaterial()">Simpan</button></div>
+                    <div class="col-md-3"><input id="matPrice" type="number" class="form-control" placeholder="Harga per Kg"></div>
+                    <div class="col-md-3"><input id="matColors" class="form-control" placeholder="Warna (Merah, Biru, ...)"></div>
+                    <div class="col-md-12"><button id="btnSaveMat" class="btn btn-primary-studio w-100 text-white" onclick="saveMaterial()">Simpan</button></div>
                 </div>
                 <div class="list-group list-group-flush" id="materialList"></div>
             </div></div>
@@ -621,6 +738,29 @@ window.syncTime = function() {
     document.getElementById('time').value = h + ':' + m;
 }
 
+// --- COLOR HELPER (NEW) ---
+function mapColorToHex(colorName) {
+    const name = colorName.toLowerCase().trim();
+    const map = {
+        'hitam': '#000000', 'black': '#000000',
+        'putih': '#ffffff', 'white': '#ffffff',
+        'merah': '#ef4444', 'red': '#ef4444',
+        'biru': '#3b82f6', 'blue': '#3b82f6',
+        'hijau': '#10b981', 'green': '#10b981',
+        'kuning': '#facc15', 'yellow': '#facc15',
+        'abu': '#64748b', 'grey': '#64748b', 'gray': '#64748b',
+        'ungu': '#8b5cf6', 'purple': '#8b5cf6',
+        'orange': '#f97316', 'jingga': '#f97316',
+        'pink': '#ec4899', 'merah muda': '#ec4899',
+        'coklat': '#78350f', 'brown': '#78350f',
+        'transparan': '#e2e8f0', 'transparent': '#e2e8f0',
+        'gold': '#eab308', 'emas': '#eab308',
+        'silver': '#cbd5e1', 'perak': '#cbd5e1',
+        'tosca': '#14b8a6'
+    };
+    return map[name] || '#94a3b8'; // Default grey
+}
+
 // --- AUTH LISTENER & LOGIC ---
 onAuthStateChanged(auth, async (user) => {
     const globalBlocker = document.getElementById('globalBlocker');
@@ -716,14 +856,16 @@ window.addToCart = function() {
     const weightVal = +document.getElementById('weight').value || 0;
     if(weightVal <= 0) return Swal.fire({icon: 'warning', text: "Berat harus diisi!", position: 'center'});
     
+    // HITUNG DULU untuk mendapatkan data terbaru
     const newItem = calculate();
     
-    // Check for identical item
+    // Check for identical item (INCLUDING COLOR)
     const existingIndex = cart.findIndex(x => 
         x.item === newItem.item && 
         x.details.weight === newItem.details.weight && 
         x.details.time === newItem.details.time &&
-        x.details.matName === newItem.details.matName
+        x.details.matName === newItem.details.matName &&
+        x.details.color === newItem.details.color // Penting: Cek Warna juga
     );
 
     if (existingIndex > -1) {
@@ -740,8 +882,8 @@ window.addToCart = function() {
     // UPDATE: SweetAlert Center Standard
     Swal.fire({
         icon: 'success',
-        title: 'Berhasil Masuk Keranjang!',
-        text: `${newItem.item || 'Item'} telah ditambahkan.`,
+        title: 'Berhasil!',
+        text: `Ditambahkan ke keranjang.`,
         showConfirmButton: false,
         timer: 1500
     });
@@ -764,11 +906,14 @@ window.updateCartUI = function() {
         let grandTotal = 0;
         cart.forEach((item, index) => {
             grandTotal += item.total;
+            // Gunakan matName yang sudah digabung dengan color dari calculate() jika ada
+            const displayName = item.details.matName; 
+            
             listPopup.innerHTML += `
                 <div class="cart-item">
                     <div>
                         <div class="fw-bold">${item.item || 'No Name'}</div>
-                        <div class="text-muted" style="font-size:0.7rem">${item.details.qty}x | ${item.details.matName}</div>
+                        <div class="text-muted" style="font-size:0.7rem">${item.details.qty}x | ${displayName}</div>
                     </div>
                     <div class="text-end">
                         <div class="fw-bold text-success">${rp(item.total)}</div>
@@ -935,14 +1080,14 @@ window.checkoutCart = async function() {
         Swal.fire({
             icon: 'success',
             title: 'Pesanan Berhasil!',
-            text: orderStatus === 'LUNAS' ? 'Pembayaran diterima. Pesanan diproses.' : 'Pesanan telah dibuat. Silahkan selesaikan pembayaran.',
+            text: orderStatus === 'LUNAS' ? 'Pembayaran diterima.' : 'Silahkan selesaikan pembayaran.',
             timer: 2000,
             showConfirmButton: false
         });
 
     } catch (error) {
         console.error("Checkout Error:", error);
-        Swal.fire('Gagal', 'Terjadi kesalahan saat memproses pesanan: ' + error.message, 'error');
+        Swal.fire('Gagal', 'Terjadi kesalahan: ' + error.message, 'error');
     }
 }
 
@@ -1160,7 +1305,11 @@ window.renderInventory = function(){
     materialsData.forEach((m) => {
         list.innerHTML += `
         <div class="list-group-item d-flex justify-content-between align-items-center py-3 border-0 border-bottom bg-transparent">
-            <div><span class="fw-bold d-block">${m.name}</span><span class="text-success small fw-bold">${rp(m.price)} / Kg</span></div>
+            <div>
+                <span class="fw-bold d-block">${m.name}</span>
+                <span class="text-success small fw-bold">${rp(m.price)} / Kg</span>
+                ${m.colors ? `<br><small class="text-muted" style="font-size:0.7rem">Warna: ${m.colors}</small>` : ''}
+            </div>
             <div>
                 <button class="btn-action btn-edit me-1" onclick="editMaterial('${m.name}')">Edit</button>
                 <button class="btn-action btn-del" onclick="deleteMaterial('${m.name}')">Hapus</button>
@@ -1170,34 +1319,151 @@ window.renderInventory = function(){
     loadMaterialSelect();
 }
 
+// --- FEATURE: LOAD MATERIAL SELECT & COLORS ---
 window.loadMaterialSelect = function(){
     const materialSelect = document.getElementById('materialSelect');
     materialSelect.innerHTML = '';
+    
+    // Default option
+    materialSelect.innerHTML = `<option value="" disabled selected>-- Pilih Filamen --</option>`;
+
     if(materialsData.length === 0) {
-        materialSelect.innerHTML = `<option value="0">-- Tambah Material di Tab Stok --</option>`;
+        materialSelect.innerHTML = `<option value="0">-- Kosong --</option>`;
     } else {
-        materialsData.forEach(m => { materialSelect.innerHTML += `<option value="${m.price}">${m.name}</option>`; });
+        materialsData.forEach(m => { 
+            // Save colors in data attribute
+            const safeColors = m.colors ? m.colors.replace(/"/g, '&quot;') : "";
+            materialSelect.innerHTML += `<option value="${m.price}" data-colors="${safeColors}">${m.name}</option>`; 
+        });
     }
     updatePriceGram();
+}
+
+// --- NEW FUNCTION: RENDER CIRCLE PALETTE ---
+window.renderColorPalette = function(colorString) {
+    const container = document.getElementById('colorPaletteContainer');
+    container.innerHTML = '';
+    
+    const colorArray = colorString.split(',').map(c => c.trim()).filter(c => c !== "");
+    
+    // Add existing colors as circles
+    colorArray.forEach(c => {
+        const hex = mapColorToHex(c);
+        const circle = document.createElement('div');
+        circle.className = 'color-swatch';
+        circle.style.backgroundColor = hex;
+        circle.title = c; // Tooltip text
+        circle.onclick = function() { selectColor(c, this); };
+        
+        // Check if white or very light, add border contrast
+        if(hex.toLowerCase() === '#ffffff' || hex.toLowerCase() === '#fff') {
+            circle.style.border = '2px solid #cbd5e1';
+        }
+        
+        container.appendChild(circle);
+    });
+
+    // Add "+" Button
+    const addBtn = document.createElement('div');
+    addBtn.className = 'btn-add-color';
+    addBtn.innerText = '+';
+    addBtn.onclick = addNewColor;
+    addBtn.title = "Tambah Warna Lain";
+    container.appendChild(addBtn);
+}
+
+// --- NEW FUNCTION: SELECT COLOR CIRCLE ---
+window.selectColor = function(colorName, el) {
+    // Update hidden input
+    document.getElementById('selectedColorValue').value = colorName;
+    
+    // Update visuals
+    const allCircles = document.querySelectorAll('.color-swatch');
+    allCircles.forEach(c => c.classList.remove('active'));
+    
+    if(el) {
+        el.classList.add('active');
+    }
+    
+    // Trigger calculation updates
+    calculate();
+}
+
+// --- NEW FUNCTION: ADD NEW COLOR MANUALLY ---
+window.addNewColor = async function() {
+    const { value: newColor } = await Swal.fire({
+        title: 'Tambah Warna Baru',
+        input: 'text',
+        inputLabel: 'Nama Warna (Contoh: Ungu, Orange)',
+        inputPlaceholder: 'Masukkan nama warna...',
+        showCancelButton: true
+    });
+
+    if (newColor) {
+        const container = document.getElementById('colorPaletteContainer');
+        // Remove Add Button temporary
+        const addBtn = container.querySelector('.btn-add-color');
+        if(addBtn) addBtn.remove();
+        
+        // Add new circle
+        const hex = mapColorToHex(newColor);
+        const circle = document.createElement('div');
+        circle.className = 'color-swatch active'; // Auto select
+        circle.style.backgroundColor = hex;
+        circle.title = newColor;
+        circle.onclick = function() { selectColor(newColor, this); };
+        
+        container.appendChild(circle);
+        container.appendChild(addBtn); // Put back button
+        
+        // Auto Select logic
+        selectColor(newColor, circle);
+    }
 }
 
 window.updatePriceGram = function(){ 
     const materialSelect = document.getElementById('materialSelect');
     const priceGram = document.getElementById('priceGram');
+    const colorContainer = document.getElementById('colorSelectContainer');
+    const colorInput = document.getElementById('selectedColorValue');
+    
+    // Update Price
     if(materialSelect.value) priceGram.value = rp(materialSelect.value / 1000); 
+    
+    // FEATURE: Update Color Palette
+    const selectedOption = materialSelect.options[materialSelect.selectedIndex];
+    if(selectedOption && selectedOption.dataset.colors) {
+        const colorString = selectedOption.dataset.colors;
+        renderColorPalette(colorString);
+        colorContainer.style.display = 'block';
+    } else {
+        // If no colors defined, show empty palette or hide? 
+        // Showing palette with just "+" button if desired, but let's assume always allow adding
+        renderColorPalette(""); 
+        colorContainer.style.display = 'block';
+    }
+    
+    // Reset selection
+    colorInput.value = "";
 }
 document.getElementById('materialSelect').addEventListener('change', window.updatePriceGram);
 
 window.saveMaterial = async function() {
     const nameEl = document.getElementById('matName');
     const priceEl = document.getElementById('matPrice');
+    const colorEl = document.getElementById('matColors'); 
     const btn = document.getElementById('btnSaveMat');
+    
     const name = nameEl.value.trim();
     const price = Number(priceEl.value);
+    const colors = colorEl.value.trim(); 
+
     if(!name || price <= 0) return Swal.fire({icon: 'warning', text: 'Data material tidak valid!', position: 'center'});
     if (editIndex !== -1 && editIndex !== name) await deleteDoc(doc(db, "materials", editIndex));
-    await setDoc(doc(db, "materials", name), { name, price });
-    nameEl.value = ''; priceEl.value = ''; editIndex = -1; btn.innerText = 'Simpan';
+    
+    await setDoc(doc(db, "materials", name), { name, price, colors }); 
+    
+    nameEl.value = ''; priceEl.value = ''; colorEl.value = ''; editIndex = -1; btn.innerText = 'Simpan';
     Swal.fire({icon: 'success', title: 'Material Disimpan', position: 'center', showConfirmButton: false, timer: 1000});
 };
 
@@ -1206,6 +1472,7 @@ window.editMaterial = function(name){
     if(item) {
         document.getElementById('matName').value = item.name;
         document.getElementById('matPrice').value = item.price;
+        document.getElementById('matColors').value = item.colors || ''; 
         editIndex = name; 
         document.getElementById('btnSaveMat').innerText = 'Update';
         document.getElementById('matName').focus();
@@ -1269,7 +1536,14 @@ function calculate(){
     const custName = document.getElementById('customer').value;
     const itemName = document.getElementById('itemName').value;
     const payStatus = document.getElementById('paymentStatus').value;
-    const matNameText = document.getElementById('materialSelect').options[document.getElementById('materialSelect').selectedIndex]?.text;
+    
+    // FEATURE: Combine Name and Color
+    let matNameText = document.getElementById('materialSelect').options[document.getElementById('materialSelect').selectedIndex]?.text || "Filamen";
+    
+    const selectedColor = document.getElementById('selectedColorValue').value;
+    if(selectedColor) {
+        matNameText = `${matNameText}, ${selectedColor}`; // Format: "PLA, Merah"
+    }
 
     lastCalculatedData = { inv: currentInv, total: grandTotal, status: payStatus, subtotal: subtotal, discAmount: discAmount, taxAmount: taxAmount, hpp: hpp, netProfit: netProfit };
     return { 
@@ -1289,7 +1563,8 @@ function calculate(){
             risk: riskVal, 
             discount: discPercent, 
             tax: taxPercent, 
-            matName: matNameText 
+            matName: matNameText, // Saved with color included
+            color: selectedColor 
         }, 
         userId: (currentUser ? currentUser.uid : null), 
         userEmail: (currentUser ? currentUser.email : null) 
@@ -1355,10 +1630,44 @@ window.loadFromHistory = function(invId){
     
     document.getElementById('profit').value = item.details.profit; document.getElementById('risk').value = item.details.risk;
     document.getElementById('discount').value = item.details.discount || 0; document.getElementById('taxActive').value = item.details.tax || 0; document.getElementById('paymentStatus').value = item.status || 'BELUM LUNAS';
+    
+    // Load Material Logic
     const materialSelect = document.getElementById('materialSelect');
-    for(let opt of materialSelect.options) { if(opt.text === item.details.matName) { materialSelect.value = opt.value; break; } }
+    // MatName in history might be "PLA, Merah". We need to find "PLA" in options.
+    const savedMatName = item.details.matName || "";
+    // Basic attempt to match base material name
+    for(let opt of materialSelect.options) { 
+        if(savedMatName.includes(opt.text)) { 
+            materialSelect.value = opt.value; 
+            break; 
+        } 
+    }
+    
+    // Trigger update to populate color palette
+    updatePriceGram();
+    
+    // Set Color if exists
+    if(item.details.color) {
+        // Find circle with this title and click it
+        const container = document.getElementById('colorPaletteContainer');
+        const circle = Array.from(container.children).find(div => div.title === item.details.color);
+        if(circle) {
+             selectColor(item.details.color, circle);
+        } else {
+            // If color not in palette (e.g. custom add), add it visibly
+             const hex = mapColorToHex(item.details.color);
+             const newCircle = document.createElement('div');
+             newCircle.className = 'color-swatch active';
+             newCircle.style.backgroundColor = hex;
+             newCircle.title = item.details.color;
+             newCircle.onclick = function() { selectColor(item.details.color, this); };
+             container.insertBefore(newCircle, container.lastChild); // Insert before + button
+             document.getElementById('selectedColorValue').value = item.details.color;
+        }
+    }
+
     const calcTabBtn = document.querySelector('[data-bs-target="#calc"]'); if(calcTabBtn) { new bootstrap.Tab(calcTabBtn).show(); }
-    updatePriceGram(); calculate(); 
+    calculate(); 
 }
 
 window.deleteHistory = async function(invId){ if(confirm(`Hapus invoice ${invId}?`)) await deleteDoc(doc(db, "orders", invId)); }
@@ -1499,11 +1808,12 @@ window.exportPDF = function() {
     doc.setFontSize(9);
     doc.setFont("helvetica", "normal");
     doc.setTextColor(grayColor);
-    const matName = document.getElementById('materialSelect').options[document.getElementById('materialSelect').selectedIndex]?.text || "-";
+    // Updated: MatName now already includes Color if calculate() was run
+    const matName = data.details ? data.details.matName : (document.getElementById('materialSelect').options[document.getElementById('materialSelect').selectedIndex]?.text || "-");
     const weight = document.getElementById('weight').value || 0;
     const time = document.getElementById('time').value || "00:00";
     const qty = document.getElementById('quantity').value || 1;
-
+    
     doc.text(`${matName}`, margin + 80, y);
     doc.setFontSize(8);
     doc.text(`Berat/pcs: ${weight}gr | Qty: ${qty}`, margin + 80, y + 5);
