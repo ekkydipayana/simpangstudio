@@ -28,7 +28,6 @@ body {
     font-family: 'Inter', sans-serif; 
     color: #1e293b;
     -webkit-font-smoothing: antialiased; 
-    /* FIX MOBILE CUT OFF */
     overflow-x: hidden;
     width: 100%;
 }
@@ -37,9 +36,7 @@ body {
     max-width: 1000px; 
     margin: 2rem auto; 
     position: relative; 
-    /* FIX MOBILE WIDTH */
     width: 100%;
-    overflow-x: hidden;
 }
 
 /* --- MARKETPLACE HEADER STYLES --- */
@@ -50,6 +47,7 @@ body {
     display: flex;
     align-items: center;
     justify-content: center;
+    -webkit-tap-highlight-color: transparent; /* Hilangkan highlight biru di mobile */
 }
 
 .header-icon-svg {
@@ -59,7 +57,9 @@ body {
     transition: 0.2s;
 }
 
-.header-icon-wrapper:hover .header-icon-svg {
+/* Ubah hover menjadi class active agar bisa di kontrol JS */
+.header-icon-wrapper:hover .header-icon-svg, 
+.header-icon-wrapper.active .header-icon-svg {
     fill: var(--primary);
 }
 
@@ -76,9 +76,9 @@ body {
     border: 2px solid white;
 }
 
-/* --- POPUP DROPDOWN (HOVER) --- */
+/* --- POPUP DROPDOWN (MODIFIED FOR CLICK/TOGGLE) --- */
 .custom-popup {
-    display: none;
+    display: none; /* Default sembunyi */
     position: absolute;
     top: 100%;
     right: 0;
@@ -92,9 +92,13 @@ body {
     animation: fadeIn 0.2s ease-in-out;
 }
 
-.header-icon-wrapper:hover .custom-popup {
+/* Class khusus untuk menampilkan popup via JS */
+.custom-popup.show {
     display: block;
 }
+
+/* HAPUS CSS HOVER LAMA agar tidak bentrok dengan JS toggle */
+/* .header-icon-wrapper:hover .custom-popup { display: block; }  <-- DIHAPUS */
 
 .popup-header {
     font-weight: 800;
@@ -201,8 +205,30 @@ div:where(.swal2-container) input:where(.swal2-input) { border-radius: 10px !imp
 }
 
 .card { border: none; border-radius: 16px; box-shadow: var(--card-shadow); background: #ffffff; overflow: hidden; margin-bottom: 1.5rem; }
-.nav-pills { background: #e2e8f0; padding: 6px; border-radius: 12px; }
-.nav-pills .nav-link { color: #64748b; font-weight: 600; border-radius: 8px; padding: 10px 20px; white-space: nowrap; }
+
+/* FIX TABS SCROLLING */
+.nav-pills { 
+    background: #e2e8f0; 
+    padding: 6px; 
+    border-radius: 12px; 
+    flex-wrap: nowrap; /* Prevent stacking */
+    overflow-x: auto; /* Allow scroll */
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none; /* Hide scrollbar Firefox */
+}
+.nav-pills::-webkit-scrollbar { display: none; /* Hide scrollbar Chrome */ }
+
+.nav-pills .nav-item {
+    flex: 0 0 auto; /* Prevent shrinking */
+}
+
+.nav-pills .nav-link { 
+    color: #64748b; 
+    font-weight: 600; 
+    border-radius: 8px; 
+    padding: 10px 20px; 
+    white-space: nowrap; /* Prevent text wrap */
+}
 .nav-pills .nav-link.active { background: var(--primary); color: white; box-shadow: 0 4px 6px -1px rgba(16, 185, 129, 0.4); }
 
 .result-display { background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: white; padding: 2rem; border-radius: 16px; text-align: center; margin-bottom: 1.5rem; }
@@ -272,24 +298,23 @@ div:where(.swal2-container) input:where(.swal2-input) { border-radius: 10px !imp
     .app-container { margin: 1rem auto; padding-left: 15px; padding-right: 15px; }
     
     .nav-pills { 
-        display: flex; 
-        flex-wrap: nowrap; 
-        overflow-x: auto; 
-        padding-bottom: 10px; 
         justify-content: flex-start;
-        -webkit-overflow-scrolling: touch;
-        scroll-behavior: smooth; /* Smooth scroll for auto-center */
+        padding-bottom: 10px; 
     }
     
     .card-body { padding: 1.25rem !important; }
     .result-display { padding: 1.5rem; }
     .result-display h2 { font-size: 2rem; }
 
+    /* FIX POPUP MOBILE - CENTERED FIXED */
     .custom-popup {
-        width: 85vw;
-        max-width: 320px;
-        right: -50px;
-        top: 110%;
+        position: fixed;
+        top: 80px; /* Adjust below header */
+        left: 50%;
+        transform: translateX(-50%);
+        right: auto;
+        width: 90%;
+        max-width: 350px;
     }
     
     .header-wrapper h2 {
@@ -323,13 +348,13 @@ div:where(.swal2-container) input:where(.swal2-input) { border-radius: 10px !imp
         </div>
 
         <div class="d-flex align-items-center gap-2">
-            <div class="header-icon-wrapper">
+            <div class="header-icon-wrapper" onclick="togglePopup('cartPopup', this)">
                 <svg class="header-icon-svg" viewBox="0 0 24 24">
                     <path d="M7 18c-1.1 0-1.99.9-1.99 2S5.9 22 7 22s2-.9 2-2-.9-2-2-2zM1 2v2h2l3.6 7.59-1.35 2.45c-.16.28-.25.61-.25.96 0 1.1.9 2 2 2h12v-2H7.42c-.14 0-.25-.11-.25-.25l.03-.12.9-1.63h7.45c.75 0 1.41-.41 1.75-1.03l3.58-6.49c.08-.14.12-.31.12-.48 0-.55-.45-1-1-1H5.21l-.94-2H1zm16 16c-1.1 0-1.99.9-1.99 2s.89 2 1.99 2 2-.9 2-2-.9-2-2-2z"/>
                 </svg>
                 <span class="cart-badge" id="cartCount">0</span>
                 
-                <div class="custom-popup" id="cartPopup">
+                <div class="custom-popup" id="cartPopup" onclick="event.stopPropagation()">
                     <div class="popup-header">Keranjang Pesanan</div>
                     <div id="cartListPopup" style="max-height: 250px; overflow-y: auto;">
                         <p class="text-center text-muted small my-3">Keranjang kosong</p>
@@ -344,12 +369,12 @@ div:where(.swal2-container) input:where(.swal2-input) { border-radius: 10px !imp
                 </div>
             </div>
 
-            <div class="header-icon-wrapper ms-2">
+            <div class="header-icon-wrapper ms-2" onclick="togglePopup('profilePopup', this)">
                 <svg class="header-icon-svg" viewBox="0 0 24 24">
                     <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
                 </svg>
                 
-                <div class="custom-popup" id="profilePopup">
+                <div class="custom-popup" id="profilePopup" onclick="event.stopPropagation()">
                     <div class="popup-header">Profil Pengguna</div>
                     <div id="profileDetails">
                         <p class="text-center text-muted small">Memuat data...</p>
@@ -361,10 +386,10 @@ div:where(.swal2-container) input:where(.swal2-input) { border-radius: 10px !imp
     </div>
 
     <ul class="nav nav-pills mb-4 justify-content-center" id="mainTabs">
-        <li class="nav-item"><button class="nav-link active" data-bs-toggle="tab" data-bs-target="#calc">⚡ Kalkulator</button></li>
-        <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#history">📜 Riwayat</button></li>
-        <li class="nav-item admin-only"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#inventory">📦 Material</button></li>
-        <li class="nav-item admin-only"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#setup">⚙️ Setup</button></li>
+        <li class="nav-item"><button class="nav-link active" data-bs-toggle="tab" data-bs-target="#calc" onclick="centerTab(this)">⚡ Kalkulator</button></li>
+        <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#history" onclick="centerTab(this)">📜 Riwayat</button></li>
+        <li class="nav-item admin-only"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#inventory" onclick="centerTab(this)">📦 Material</button></li>
+        <li class="nav-item admin-only"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#setup" onclick="centerTab(this)">⚙️ Setup</button></li>
     </ul>
 
     <div class="tab-content">
@@ -707,19 +732,40 @@ let currentUserData = null;
 let unsubscribeOrders = null; 
 let isRegisterMode = false;
 
-// --- TAB AUTO CENTER LOGIC (MOBILE ONLY) ---
-document.querySelectorAll('.nav-link').forEach(tab => {
-    tab.addEventListener('click', (e) => {
-        // Cek lebar layar (hanya jalankan jika di HP/Layar kecil < 576px)
-        if (window.innerWidth <= 576) {
-            const navPills = document.getElementById('mainTabs');
-            const target = e.target;
-            // Hitung posisi tengah
-            const scrollLeft = target.offsetLeft - (navPills.clientWidth / 2) + (target.clientWidth / 2);
-            navPills.scrollTo({ left: scrollLeft, behavior: 'smooth' });
-        }
-    });
+// --- JS TOGGLE POPUP (NEW) ---
+window.togglePopup = function(id, el) {
+    if (event) event.stopPropagation();
+    
+    const popup = document.getElementById(id);
+    const isVisible = popup.classList.contains('show');
+    
+    // Close ALL popups first
+    document.querySelectorAll('.custom-popup').forEach(p => p.classList.remove('show'));
+    document.querySelectorAll('.header-icon-wrapper').forEach(w => w.classList.remove('active'));
+    
+    // If it wasn't visible, open it now (Toggle behavior)
+    if (!isVisible) {
+        popup.classList.add('show');
+        if(el) el.classList.add('active');
+    }
+}
+
+// Close popup when clicking outside
+document.addEventListener('click', function(e) {
+    document.querySelectorAll('.custom-popup').forEach(p => p.classList.remove('show'));
+    document.querySelectorAll('.header-icon-wrapper').forEach(w => w.classList.remove('active'));
 });
+
+// --- SMOOTH AUTO CENTER TAB (MOBILE) ---
+window.centerTab = function(element) {
+    const nav = document.getElementById('mainTabs');
+    const scrollLeft = element.offsetLeft - (nav.clientWidth / 2) + (element.clientWidth / 2);
+    
+    nav.scrollTo({
+        left: scrollLeft,
+        behavior: 'smooth'
+    });
+}
 
 // --- SINKRONISASI WAKTU (BARU) ---
 window.syncTime = function() {
@@ -1859,4 +1905,3 @@ renderInventory(); renderHistory(); generateInvoiceNum();
 </script>
 </body>
 </html>
-
